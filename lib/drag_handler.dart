@@ -31,6 +31,9 @@ class DragHandler {
     }
   }
   
+  // true iff a drag is occurring
+  bool _dragging = false;
+  
   DragHandler() {
     // store a reference to the autostop up handler so we can add and remove it
     _mouseUp = _autoStopUpHandler;
@@ -42,26 +45,35 @@ class DragHandler {
   void _autoStopUpHandler(MouseEvent event) {
     //print("drag handler: got mouse up, stopping drag");
     // stop the drag
-    stopDrag(event);
+    // only call if we are currently dragging
+    if(_dragging) {
+      stopDrag(event);
+    }
   }
   
   /// Begin the drag
   void startDrag() {
     //print("drag handler: registering call back and move event");
-    // if there is an existing callback, remove it
-    stopDrag();
-    // register for the move event
-    if(dragCallback != null) {
-      document.body.on.mouseMove.add(dragCallback);
-    }
-    // call the start callback
-    if(startCallback != null) {
-      startCallback();
+    if(!_dragging) {
+    
+      // register for the move event
+      if(dragCallback != null) {
+        document.body.on.mouseMove.add(dragCallback);
+      }
+      // call the start callback
+      if(startCallback != null) {
+        startCallback();
+      }
+      // signal that we are dragging
+      _dragging = true;
     }
   }
   
   /// Manually end the drag
   void stopDrag([MouseEvent event]) {
+    // signal that we are no longer dragging
+    _dragging = false;
+    
     //print("drag handler: removing callback");
     // remove the callback
     if(dragCallback != null) {
