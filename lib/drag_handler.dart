@@ -40,14 +40,14 @@ class DragHandler {
   
   // the method that will be called on mouse up events when autostop is on
   void _autoStopUpHandler(MouseEvent event) {
-    print("drag handler: got mouse up, stopping drag");
+    //print("drag handler: got mouse up, stopping drag");
     // stop the drag
     stopDrag();
   }
   
   /// Begin the drag
   void startDrag() {
-    print("drag handler: registering call back and move event");
+    //print("drag handler: registering call back and move event");
     // if there is an existing callback, remove it
     stopDrag();
     // register for the move event
@@ -58,7 +58,7 @@ class DragHandler {
   
   /// Manually end the drag
   void stopDrag() {
-    print("drag handler: removing callback");
+    //print("drag handler: removing callback");
     // remove the callback
     if(dragCallback != null) {
       document.body.on.mouseMove.remove(dragCallback);
