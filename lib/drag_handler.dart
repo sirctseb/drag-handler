@@ -42,7 +42,7 @@ class DragHandler {
   void _autoStopUpHandler(MouseEvent event) {
     //print("drag handler: got mouse up, stopping drag");
     // stop the drag
-    stopDrag();
+    stopDrag(event);
   }
   
   /// Begin the drag
@@ -54,14 +54,22 @@ class DragHandler {
     if(dragCallback != null) {
       document.body.on.mouseMove.add(dragCallback);
     }
+    // call the start callback
+    if(startCallback != null) {
+      startCallback();
+    }
   }
   
   /// Manually end the drag
-  void stopDrag() {
+  void stopDrag([MouseEvent event]) {
     //print("drag handler: removing callback");
     // remove the callback
     if(dragCallback != null) {
       document.body.on.mouseMove.remove(dragCallback);
+    }
+    // call the end callback
+    if(endCallback != null) {
+      endCallback(event);
     }
   }
 }
