@@ -102,6 +102,11 @@ class DragHandler {
     if(dragOut != null) {
       _currentTarget.on.mouseOut.add(_mouseOut);
     }
+    
+    // call start callback if it exists
+    if(dragStart != null) {
+      dragStart(this, _currentTarget, event);
+    }
   }
   void _mouseOverHandler(MouseEvent event) {
     // call the drag in callback
