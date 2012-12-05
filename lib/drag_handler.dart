@@ -3,6 +3,7 @@ part of Tabasci;
 typedef void DragCallback(DragHandler dragHandler, Element element, MouseEvent event);
 
 // TODO this should probably be a singleton. when do you drag more than one thing at a time?
+// TODO make universal enable/disable flag
 class DragHandler {
   
   /// The function to be called on mouse move when dragging
