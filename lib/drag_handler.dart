@@ -1,16 +1,24 @@
 part of Tabasci;
 
+typedef void DragCallback(DragHandler dragHandler, Element element, MouseEvent event);
+
 // TODO this should probably be a singleton. when do you drag more than one thing at a time?
 class DragHandler {
   
   /// The function to be called on mouse move when dragging
-  var dragCallback;
+  DragCallback dragCallback;
   
   /// The function to be called when dragging begins
-  var startCallback;
+  DragCallback startCallback;
   
   /// The function to be called when dragging ends
-  var endCallback;
+  DragCallback endCallback;
+  
+  /// The function to be called when the mouse is dragged out of the original element
+  DragCallback dragOut;
+  
+  /// The function to be called when the mouse is dragged (back) into the original element
+  DragCallback dragIn;
   
   // reference to the local mouse up handler
   var _mouseUp;
