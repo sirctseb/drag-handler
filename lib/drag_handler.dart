@@ -139,6 +139,9 @@ class DragHandler {
     // signal that we are no longer dragging
     _dragging = false;
     
+    // TODO if callbacks are set to null during a drag,
+    // they will never be removed. we should define a setter that checks
+    
     // remove callbacks
     if(drag != null) {
       document.body.on.mouseMove.remove(_mouseMove);
