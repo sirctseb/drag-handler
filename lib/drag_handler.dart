@@ -47,7 +47,19 @@ class DragHandler {
   bool _enabled = true;
   /// True iff the handler is active
   bool get enabled => _enabled;
+  bool _delayedDisable = false;
   set enabled(bool e) {
+    // if we are currently dragging, delay a disable until it ends
+    // TODO yikes, this is kind of scary
+    if(_dragging && _enabled && !e) {
+      _delayedDisable = true;
+      return;
+    }
+    // if we are enabled during a delayed disable, disable the delayed disable
+    if(_delayedDisable && e) {
+      _delayedDisable = false;
+    }
+    
     // if we aren't changing state, don't do anything
     if(_enabled != e) {
       
@@ -104,6 +116,7 @@ class DragHandler {
   }
   
   void _mouseDownHandler(MouseEvent event) {
+    //print("mouse down, enabled: $enabled");
     // TODO if(!_dragging)?
     
     // TODO if we check for non-null handlers here, before we attach them,
@@ -116,6 +129,10 @@ class DragHandler {
     _currentTarget = event.currentTarget;
     
     // set dragging flag
+    // TODO have an intermediate state where we notice
+    // the mouse down and watch for the other events,
+    // but we don't set _dragging or do callbacks
+    // until we actually get a mouse move
     _dragging = true;
     
     // register for a move event if the callback exists
@@ -149,6 +166,7 @@ class DragHandler {
     }
   }
   void _mouseMoveHandler(MouseEvent event) {
+    //print("mouse move, enabled: $enabled, dragging: $_dragging");
     // call the drag callback
     // TODO is currentTarget the correct thing?
     // TODO if so, we don't really need to pass it as a para
@@ -161,15 +179,18 @@ class DragHandler {
   
   // the method that will be called on mouse up events when autostop is on
   void _autoStopUpHandler(MouseEvent event) {
+    //print("auto stop handling, enabled: $enabled, dragging: $_dragging");
     // stop the drag
     // only call if we are currently dragging and enabled
     if(_dragging && enabled) {
-      stopDrag();
+      print("calling stop drag");
+      stopDrag(event);
     }
   }
   
   /// Manually end the drag
-  void stopDrag() {
+  void stopDrag([MouseEvent event]) {
+    
     // signal that we are no longer dragging
     _dragging = false;
     
@@ -189,10 +210,16 @@ class DragHandler {
     
     // call the end callback
     if(dragEnd != null) {
-      dragEnd(this, _currentTarget, null);
+      dragEnd(this, _currentTarget, event);
     }
     
     // clear current target
     _currentTarget = null;
+    
+    // if we are on a delayed disable, do the disable
+    if(_delayedDisable) {
+      _delayedDisable = false;
+      enabled = false;
+    }
   }
 }
