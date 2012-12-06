@@ -90,6 +90,32 @@ class DragHandler {
   // The set of elements the handler watches for drags on
   List<Element> _targets = [];
   
+  /// Add a target to the set
+  void addTarget(Element element) {
+    _targets.add(element);
+    // TODO if dragging?
+  }
+  /// Add targets to the set
+  void addTargets(List<Element> elements) {
+    _targets.addAll(elements);
+    // TODO if draggging?
+  }
+  /// Remove a target from the set
+  void removeTarget(Element element) {
+    int index = _targets.indexOf(element);
+    if(index != null) {
+      _targets.removeAt(index);
+    }
+    // TODO if dragging?
+  }
+  /// Remove targets from the set
+  void removeTargets(List<Element> elements) {
+    for(Element element in elements) {
+      removeTarget(element);
+    }
+    // TODO if dragging?
+  }
+  
   // The element that the current drag started on
   Element _currentTarget;
   
