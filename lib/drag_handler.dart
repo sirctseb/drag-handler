@@ -103,7 +103,6 @@ class DragHandler {
   
   /// Add a target to the set
   void addTarget(Element element) {
-    print("adding target");
     // save size to compare with size after
     int oldSize = _targets.length;
     // add element
@@ -264,7 +263,6 @@ class DragHandler {
     // stop the drag
     // only call if we are currently dragging and enabled
     if((_dragStartPending || _dragging) && enabled) {
-      print("calling stop drag");
       stopDrag(event);
     }
   }
