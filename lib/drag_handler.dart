@@ -44,6 +44,34 @@ class DragHandler {
     }
   }
   
+  bool _enabled = true;
+  /// True iff the handler is active
+  bool get enabled => _enabled;
+  set enabled(bool e) {
+    // if we aren't changing state, don't do anything
+    if(_enabled != e) {
+      
+      // update flag
+      _enabled = e;
+      
+      // add or remove handlers
+      if(enabled) {
+        // add mouse down handlers to the targets
+        for(Element t in _targets) {
+          t.on.mouseDown.add(_mouseDown);
+        }
+      } else {
+        // remove mouse down handlers from the targets
+        for(Element t in _targets) {
+          t.on.mouseDown.remove(_mouseDown);
+        }
+      }
+    }
+    
+    // TODO should we actually remove the up handler?
+    // TODO currently we just check for enabled in up handler
+  }
+  
   // true iff a drag is occurring
   bool _dragging = false;
 
@@ -134,8 +162,8 @@ class DragHandler {
   // the method that will be called on mouse up events when autostop is on
   void _autoStopUpHandler(MouseEvent event) {
     // stop the drag
-    // only call if we are currently dragging
-    if(_dragging) {
+    // only call if we are currently dragging and enabled
+    if(_dragging && enabled) {
       stopDrag();
     }
   }
