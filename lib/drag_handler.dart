@@ -92,18 +92,29 @@ class DragHandler {
   
   /// Add a target to the set
   void addTarget(Element element) {
+    // save size to compare with size after
+    int oldSize = _targets.length;
+    // add element
     _targets.add(element);
+    // if size is bigger, the element is new, so add down handler
+    if(_targets.length > oldSize && enabled) {
+      element.on.mouseDown.add(_mouseDown);
+    }
     // TODO if dragging?
   }
   /// Add targets to the set
   void addTargets(List<Element> elements) {
-    _targets.addAll(elements);
+    for(Element element in elements) {
+      addTarget(element);
+    }
     // TODO if draggging?
   }
   /// Remove a target from the set
   void removeTarget(Element element) {
     int index = _targets.indexOf(element);
     if(index != null) {
+      // remove down handler
+      _targets[index].on.mouseDown.remove(_mouseDown);
       _targets.removeAt(index);
     }
     // TODO if dragging?
