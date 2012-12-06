@@ -124,7 +124,7 @@ class DragHandler {
   /// Remove a target from the set
   void removeTarget(Element element) {
     int index = _targets.indexOf(element);
-    if(index != null) {
+    if(index != -1) {
       // remove down handler
       _targets[index].on.mouseDown.remove(_mouseDown);
       _targets.removeAt(index);
