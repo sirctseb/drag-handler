@@ -2,7 +2,7 @@ part of Tabasci;
 
 typedef void DragCallback(DragHandler dragHandler, Element element, MouseEvent event);
 // type of a function that determines if a drag should be allowed to start
-typedef bool AllowDragStart(DragHandler dragHandler, MouseEvent event, Element element);
+typedef bool AllowDragStart(DragHandler dragHandler, Element element, MouseEvent event);
 
 // TODO this should probably be a singleton. when do you drag more than one thing at a time?
 // TODO make universal enable/disable flag
@@ -160,7 +160,7 @@ class DragHandler {
   
   void _mouseDownHandler(MouseEvent event) {
     // if there is a condition callback, call it to see if we should start the drag
-    if(dragConditions != null && !dragConditions(this, event, event.currentTarget)) return;
+    if(dragConditions != null && !dragConditions(this, event.currentTarget, event)) return;
     
     //print("mouse down, enabled: $enabled");
     // TODO if(!_dragging)?
