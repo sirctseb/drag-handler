@@ -91,6 +91,12 @@ class DragHandler {
   
   // true iff a drag is occurring
   bool _dragging = false;
+  
+  // true iff we got a mouse down and are waiting for the first move
+  // to actually start the drag
+  bool _dragStartPending = false;
+  // the mouse down event that starts a drag
+  MouseEvent _startEvent;
 
   // The set of elements the handler watches for drags on
   List<Element> _targets = [];
@@ -181,7 +187,9 @@ class DragHandler {
     // until we actually get a mouse move
     // TODO we should also save the event object and not send
     // the callback until we get the mouse move?
-    _dragging = true;
+    _dragStartPending = true;
+    _startEvent = event;
+    //_dragging = true;
     
     // register for a move event if the callback exists
     if(drag != null) {
@@ -199,25 +207,44 @@ class DragHandler {
         e.on.mouseOut.add(_mouseOut);
       }
     }
-    
-    // call start callback if it exists
-    if(dragStart != null) {
-      dragStart(this, _currentTarget, event);
+  }
+  
+  void _pendingToDrag() {
+    if(_dragStartPending) {
+      
+      // call start callback if it exists
+      if(dragStart != null) {
+        dragStart(this, _currentTarget, _startEvent);
+      }
+      
+      // switch from pending to dragging
+      _dragStartPending = false;
+      _dragging = true;
     }
   }
+  
   void _mouseOverHandler(MouseEvent event) {
+    // do actual start in case we were pending before
+    _pendingToDrag();
+    
     // call the drag in callback
     if(dragOver != null) {
       dragOver(this, event.currentTarget, event);
     }
   }
   void _mouseOutHandler(MouseEvent event) {
+    // do actual start in case we were pending before
+    _pendingToDrag();
+    
     // call the drag out callback
     if(dragOut != null) {
       dragOut(this, event.currentTarget, event);
     }
   }
   void _mouseMoveHandler(MouseEvent event) {
+    // do actual start in case we were pending before
+    _pendingToDrag();
+
     //print("mouse move, enabled: $enabled, dragging: $_dragging");
     // call the drag callback
     // TODO is currentTarget the correct thing?
@@ -236,7 +263,7 @@ class DragHandler {
     //print("auto stop handling, enabled: $enabled, dragging: $_dragging");
     // stop the drag
     // only call if we are currently dragging and enabled
-    if(_dragging && enabled) {
+    if((_dragStartPending || _dragging) && enabled) {
       print("calling stop drag");
       stopDrag(event);
     }
@@ -269,7 +296,8 @@ class DragHandler {
     }
     
     // call the end callback
-    if(dragEnd != null) {
+    // only do callback if we weren't just pending
+    if(dragEnd != null && !_dragStartPending) {
       dragEnd(this, _currentTarget, event);
     }
     
@@ -281,5 +309,8 @@ class DragHandler {
       _delayedDisable = false;
       enabled = false;
     }
+    
+    // clear pending flag if it was set
+    _dragStartPending = false;
   }
 }
