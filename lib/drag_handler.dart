@@ -133,19 +133,25 @@ class DragHandler {
     // the mouse down and watch for the other events,
     // but we don't set _dragging or do callbacks
     // until we actually get a mouse move
+    // TODO we should also save the event object and not send
+    // the callback until we get the mouse move?
     _dragging = true;
     
     // register for a move event if the callback exists
     if(drag != null) {
       document.body.on.mouseMove.add(_mouseMove);
     }
-    // register for mouse over event if the callback exists
+    // register for mouse over event on all elements if the callback exists
     if(dragOver != null) {
-      _currentTarget.on.mouseOver.add(_mouseOver);
+      for(Element e in _targets) {
+        e.on.mouseOver.add(_mouseOver);
+      }
     }
-    // register for mouse out event if the callback exists
+    // register for mouse out event on all elements if the callback exists
     if(dragOut != null) {
-      _currentTarget.on.mouseOut.add(_mouseOut);
+      for(Element e in _targets) {
+        e.on.mouseOut.add(_mouseOut);
+      }
     }
     
     // call start callback if it exists
@@ -172,6 +178,8 @@ class DragHandler {
     // TODO if so, we don't really need to pass it as a para
     // because it's in event
     // TODO now that we store _currentTarget, we should probably use that
+    // TODO now that we store _currentTarget, we should definitely use that,
+    // TODO because this event was attached to body
     if(drag != null) {
       drag(this, event.currentTarget, event);
     }
@@ -197,15 +205,21 @@ class DragHandler {
     // TODO if callbacks are set to null during a drag,
     // they will never be removed. we should define a setter that checks
     
+    // TODO if elements are changed during a drag, they won't be removed either
+    
     // remove callbacks
     if(drag != null) {
       document.body.on.mouseMove.remove(_mouseMove);
     }
     if(dragOver != null) {
-      _currentTarget.on.mouseOut.remove(_mouseOver);
+      for(Element e in _targets) {
+        e.on.mouseOut.remove(_mouseOver);
+      }
     }
     if(dragOut != null) {
-      _currentTarget.on.mouseOut.remove(_mouseOut);
+      for(Element e in _targets) {
+        e.on.mouseOut.remove(_mouseOut);
+      }
     }
     
     // call the end callback
