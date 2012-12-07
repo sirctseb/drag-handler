@@ -110,15 +110,22 @@ class DragHandler {
     // if size is bigger, the element is new, so add down handler
     if(_targets.length > oldSize && enabled) {
       element.on.mouseDown.add(_mouseDown);
+      // if dragging or pending, add event handlers to the new element
+      if(_dragging || _dragStartPending) {
+        if(dragOver != null) {
+          element.on.mouseOver.add(_mouseOver);
+        }
+        if(dragOut != null) {
+          element.on.mouseOut.add(_mouseOut);
+        }
+      }
     }
-    // TODO if dragging?
   }
   /// Add targets to the set
   void addTargets(List<Element> elements) {
     for(Element element in elements) {
       addTarget(element);
     }
-    // TODO if draggging?
   }
   /// Remove a target from the set
   void removeTarget(Element element) {
@@ -127,15 +134,19 @@ class DragHandler {
       // remove down handler
       _targets[index].on.mouseDown.remove(_mouseDown);
       _targets.removeAt(index);
+      if(dragOver != null) {
+        element.on.mouseOver.remove(_mouseOver);
+      }
+      if(dragOut != null) {
+        element.on.mouseOut.remove(_mouseOut);
+      }
     }
-    // TODO if dragging?
   }
   /// Remove targets from the set
   void removeTargets(List<Element> elements) {
     for(Element element in elements) {
       removeTarget(element);
     }
-    // TODO if dragging?
   }
   
   // The element that the current drag started on
