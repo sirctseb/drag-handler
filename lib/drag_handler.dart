@@ -234,6 +234,8 @@ class DragHandler {
   }
   
   void _mouseOverHandler(MouseEvent event) {
+    // TODO what cases should this occur
+    
     // do actual start in case we were pending before
     _pendingToDrag();
     
@@ -243,6 +245,10 @@ class DragHandler {
     }
   }
   void _mouseOutHandler(MouseEvent event) {
+    // only respond to this event when the element being left is
+    // not a child of the element the event was attached to
+    if((event.currentTarget as Element).contains(event.toElement)) return;
+    
     // do actual start in case we were pending before
     _pendingToDrag();
     
