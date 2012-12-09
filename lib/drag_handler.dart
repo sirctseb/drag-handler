@@ -270,7 +270,7 @@ class DragHandler {
     // TODO now that we store _currentTarget, we should definitely use that,
     // TODO because this event was attached to body
     if(drag != null) {
-      drag(this, event.currentTarget, event);
+      drag(this, _currentTarget, event);
     }
   }
   
