@@ -203,7 +203,7 @@ class DragHandler {
     
     // register for a move event if the callback exists
     if(drag != null) {
-      document.body.on.mouseMove.add(_mouseMove);
+      document.on.mouseMove.add(_mouseMove);
     }
     // register for mouse over event on all elements if the callback exists
     if(dragOver != null) {
@@ -297,7 +297,7 @@ class DragHandler {
     
     // remove callbacks
     if(drag != null) {
-      document.body.on.mouseMove.remove(_mouseMove);
+      document.on.mouseMove.remove(_mouseMove);
     }
     if(dragOver != null) {
       for(Element e in _targets) {
