@@ -135,10 +135,10 @@ class DragHandler {
       _targets[index].on.mouseDown.remove(_mouseDown);
       _targets.removeAt(index);
       if(dragOver != null) {
-        element.on.mouseOver.remove(_mouseOver);
+        element.on.mouseOver.remove(_mouseOver, true);
       }
       if(dragOut != null) {
-        element.on.mouseOut.remove(_mouseOut);
+        element.on.mouseOut.remove(_mouseOut, true);
       }
     }
   }
@@ -208,13 +208,13 @@ class DragHandler {
     // register for mouse over event on all elements if the callback exists
     if(dragOver != null) {
       for(Element e in _targets) {
-        e.on.mouseOver.add(_mouseOver);
+        e.on.mouseOver.add(_mouseOver, true);
       }
     }
     // register for mouse out event on all elements if the callback exists
     if(dragOut != null) {
       for(Element e in _targets) {
-        e.on.mouseOut.add(_mouseOut);
+        e.on.mouseOut.add(_mouseOut, true);
       }
     }
   }
