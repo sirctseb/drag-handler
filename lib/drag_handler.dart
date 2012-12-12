@@ -113,10 +113,10 @@ class DragHandler {
       // if dragging or pending, add event handlers to the new element
       if(_dragging || _dragStartPending) {
         if(dragOver != null) {
-          element.on.mouseOver.add(_mouseOver);
+          element.on.mouseOver.add(_mouseOver, true);
         }
         if(dragOut != null) {
-          element.on.mouseOut.add(_mouseOut);
+          element.on.mouseOut.add(_mouseOut, true);
         }
       }
     }
