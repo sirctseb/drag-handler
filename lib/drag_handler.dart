@@ -303,12 +303,12 @@ class DragHandler {
     }
     if(dragOver != null) {
       for(Element e in _targets) {
-        e.on.mouseOver.remove(_mouseOver);
+        e.on.mouseOver.remove(_mouseOver, true);
       }
     }
     if(dragOut != null) {
       for(Element e in _targets) {
-        e.on.mouseOut.remove(_mouseOut);
+        e.on.mouseOut.remove(_mouseOut, true);
       }
     }
     
