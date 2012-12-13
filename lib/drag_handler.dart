@@ -41,10 +41,10 @@ class DragHandler {
       _autoStop = a;
       if(a) {
         // register up handler
-        document.body.on.mouseUp.add(_mouseUp);
+        document.on.mouseUp.add(_mouseUp);
       } else {
         // unregister up handler
-        document.body.on.mouseUp.remove(_mouseUp);
+        document.on.mouseUp.remove(_mouseUp);
       }
     }
   }
