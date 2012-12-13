@@ -150,7 +150,7 @@ class DragHandler {
   }
   /// Remove all targets
   void removeAllTargets() {
-    removeTargets(_targets);
+    removeTargets(new List.from(_targets));
   }
   
   // The element that the current drag started on
