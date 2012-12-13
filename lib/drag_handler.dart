@@ -148,6 +148,10 @@ class DragHandler {
       removeTarget(element);
     }
   }
+  /// Remove all targets
+  void removeAllTargets() {
+    removeTargets(_targets);
+  }
   
   // The element that the current drag started on
   Element _currentTarget;
