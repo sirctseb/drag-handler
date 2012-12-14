@@ -182,6 +182,9 @@ class DragHandler {
     // if there is a condition callback, call it to see if we should start the drag
     if(dragConditions != null && !dragConditions(this, event.currentTarget, event)) return;
     
+    // to prevent selection during drag
+    event.preventDefault();
+    
     //print("mouse down, enabled: $enabled");
     // TODO if(!_dragging)?
     
