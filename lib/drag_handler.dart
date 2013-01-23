@@ -26,25 +26,72 @@ class DragHandler {
   /// The function to call to determine if the drag should be allowed to start on mouse down
   AllowDragStart dragConditions;
   
+  // methods to subscribe / unsubscribe safely
+  void _listen(String event, Node element, [bool useCapture = false]) {
+    var subscriptions, handler, provider;
+    if(event == "mouseDown") {
+      subscriptions = _mouseDownSubscriptions;
+      handler = _mouseDown;
+      provider = Element.mouseDownEvent;
+    } else if(event == "mouseMove") {
+      subscriptions = _mouseMoveSubscriptions;
+      handler = _mouseMove;
+      provider = Element.mouseMoveEvent;
+    } else if(event == "mouseOver") {
+      subscriptions = _mouseOverSubscriptions;
+      handler = _mouseOver;
+      provider = Element.mouseOverEvent;
+    } else if(event == "mouseOut") {
+      subscriptions = _mouseOutSubscriptions;
+      handler = _mouseOut;
+      provider = Element.mouseOutEvent;
+    }
+    subscriptions[element.hashCode] = provider.forTarget(element, useCapture:useCapture).listen(handler);
+  }
+  void _cancel(String event, Node element) {
+    var subscriptions;
+    if(event == "mouseDown") {
+      subscriptions = _mouseDownSubscriptions;
+    } else if(event == "mouseMove") {
+      subscriptions = _mouseMoveSubscriptions;
+    } else if(event == "mouseOver") {
+      subscriptions = _mouseOverSubscriptions;
+    } else if(event == "mouseOut") {
+      subscriptions = _mouseOutSubscriptions;
+    }
+    if(subscriptions.containsKey(element.hashCode)) {
+      subscriptions[element.hashCode].cancel();
+    }
+    subscriptions.remove(element.hashCode);
+  }
   // references to the local mouse event handlers
   var _mouseDown;
+  Map<int, StreamSubscription> _mouseDownSubscriptions = new Map();
   var _mouseMove;
+  Map<int, StreamSubscription> _mouseMoveSubscriptions = new Map();
   var _mouseOver;
+  Map<int, StreamSubscription> _mouseOverSubscriptions = new Map();
   var _mouseOut;
+  Map<int, StreamSubscription> _mouseOutSubscriptions = new Map();
   var _mouseUp;
   
   bool _autoStop;
   /// True if we should automatically stop drags on mouse up
   bool get autoStop => _autoStop;
+  StreamSubscription _mouseUpSubscription;
   set autoStop(bool a) {
     if(_autoStop != a) {
       _autoStop = a;
       if(a) {
-        // register up handler
-        document.on.mouseUp.add(_mouseUp);
+        // register up handler or resume existing
+        if(_mouseUpSubscription == null) {
+          _mouseUpSubscription = document.onMouseUp.listen(_mouseUp);
+        } else {
+          _mouseUpSubscription.resume();
+        }
       } else {
-        // unregister up handler
-        document.on.mouseUp.remove(_mouseUp);
+        // pause up handler
+        _mouseUpSubscription.pause();
       }
     }
   }
@@ -75,12 +122,12 @@ class DragHandler {
       if(enabled) {
         // add mouse down handlers to the targets
         for(Element t in _targets) {
-          t.on.mouseDown.add(_mouseDown);
+          _listen("mouseDown", t);
         }
       } else {
         // remove mouse down handlers from the targets
         for(Element t in _targets) {
-          t.on.mouseDown.remove(_mouseDown);
+          _cancel("mouseDown", t);
         }
       }
     }
@@ -109,14 +156,14 @@ class DragHandler {
     _targets.add(element);
     // if size is bigger, the element is new, so add down handler
     if(_targets.length > oldSize && enabled) {
-      element.on.mouseDown.add(_mouseDown);
+      _listen("mouseDown", element);
       // if dragging or pending, add event handlers to the new element
       if(_dragging || _dragStartPending) {
         if(dragOver != null) {
-          element.on.mouseOver.add(_mouseOver, true);
+          _listen("mouseOver", element, true);
         }
         if(dragOut != null) {
-          element.on.mouseOut.add(_mouseOut, true);
+          _listen("mouseOut", element, true);
         }
       }
     }
@@ -132,13 +179,13 @@ class DragHandler {
     int index = _targets.indexOf(element);
     if(index != -1) {
       // remove down handler
-      _targets[index].on.mouseDown.remove(_mouseDown);
+      _cancel("mouseDown", _targets[index]);
       _targets.removeAt(index);
       if(dragOver != null) {
-        element.on.mouseOver.remove(_mouseOver, true);
+        _cancel("mouseOver", element);
       }
       if(dragOut != null) {
-        element.on.mouseOut.remove(_mouseOut, true);
+        _cancel("mouseOut", element);
       }
     }
   }
@@ -171,7 +218,7 @@ class DragHandler {
     
     // add mouse down handlers to the targets
     for(Element t in _targets) {
-      t.on.mouseDown.add(_mouseDown);
+      _listen("mouseDown", t);
     }
     
     // set autostop on by default
@@ -210,18 +257,19 @@ class DragHandler {
     
     // register for a move event if the callback exists
     if(drag != null) {
-      document.on.mouseMove.add(_mouseMove);
+      // TODO as Element?
+      _listen("mouseMove", document);
     }
     // register for mouse over event on all elements if the callback exists
     if(dragOver != null) {
       for(Element e in _targets) {
-        e.on.mouseOver.add(_mouseOver, true);
+        _listen("mouseOver", e, true);
       }
     }
     // register for mouse out event on all elements if the callback exists
     if(dragOut != null) {
       for(Element e in _targets) {
-        e.on.mouseOut.add(_mouseOut, true);
+        _listen("mouseOut", e, true);
       }
     }
   }
@@ -306,16 +354,18 @@ class DragHandler {
     
     // remove callbacks
     if(drag != null) {
-      document.on.mouseMove.remove(_mouseMove);
+      // TODO this can just be paused
+      // TODO as Element?
+      _cancel("mouseMove", document);
     }
     if(dragOver != null) {
       for(Element e in _targets) {
-        e.on.mouseOver.remove(_mouseOver, true);
+        _cancel("mouseOver", e);
       }
     }
     if(dragOut != null) {
       for(Element e in _targets) {
-        e.on.mouseOut.remove(_mouseOut, true);
+        _cancel("mouseOut", e);
       }
     }
     
