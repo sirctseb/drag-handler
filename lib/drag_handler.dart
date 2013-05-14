@@ -169,7 +169,7 @@ class DragHandler {
     }
   }
   /// Add targets to the set
-  void addTargets(List<Element> elements) {
+  void addTargets(Iterable<Element> elements) {
     for(Element element in elements) {
       addTarget(element);
     }
