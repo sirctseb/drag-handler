@@ -1,27 +1,34 @@
 part of Tabasci;
 
-typedef void DragCallback(DragHandler dragHandler, Element element, MouseEvent event);
 // type of a function that determines if a drag should be allowed to start
 typedef bool AllowDragStart(DragHandler dragHandler, Element element, MouseEvent event);
 
-// TODO this should probably be a singleton. when do you drag more than one thing at a time?
+/// The event class that is sent with drag handler stream event updates
+class DragEvent {
+  /// The [DragHandler] sending the event
+  DragHandler dragHandler;
+  /// The [Element] being dragged
+  Element element;
+  /// The [MouseEvent] that instigated the drag handler event
+  MouseEvent mouseEvent;
+  DragEvent(DragHandler this.dragHandler, Element this.element, MouseEvent this.mouseEvent);
+}
+
 // TODO make universal enable/disable flag
 class DragHandler {
   
-  /// The function to be called on mouse move when dragging
-  DragCallback drag;
-  
-  /// The function to be called when dragging begins
-  DragCallback dragStart;
-  
-  /// The function to be called when dragging ends
-  DragCallback dragEnd;
-  
-  /// The function to be called when the mouse is dragged out of the original element
-  DragCallback dragOut;
-  
-  /// The function to be called when the mouse is dragged (back) into the original element
-  DragCallback dragOver;
+  // stream controllers
+  StreamController<DragEvent> _dragStreamController = new StreamController<DragEvent>();
+  StreamController<DragEvent> _dragStartStreamController = new StreamController<DragEvent>();
+  StreamController<DragEvent> _dragEndStreamController = new StreamController<DragEvent>();
+  StreamController<DragEvent> _dragOutStreamController = new StreamController<DragEvent>();
+  StreamController<DragEvent> _dragOverStreamController = new StreamController<DragEvent>();
+  /// Exposed drag handler event streams
+  Stream<DragEvent> get onDrag => _dragStreamController.stream;
+  Stream<DragEvent> get onDragStart => _dragStartStreamController.stream;
+  Stream<DragEvent> get onDragEnd => _dragEndStreamController.stream;
+  Stream<DragEvent> get onDragOut => _dragOutStreamController.stream;
+  Stream<DragEvent> get onDragOver => _dragOverStreamController.stream;
   
   /// The function to call to determine if the drag should be allowed to start on mouse down
   AllowDragStart dragConditions;
@@ -159,12 +166,9 @@ class DragHandler {
       _listen("mouseDown", element);
       // if dragging or pending, add event handlers to the new element
       if(_dragging || _dragStartPending) {
-        if(dragOver != null) {
-          _listen("mouseOver", element, true);
-        }
-        if(dragOut != null) {
-          _listen("mouseOut", element, true);
-        }
+        // TODO if have subscribers?
+        _listen("mouseOver", element, true);
+        _listen("mouseOut", element, true);
       }
     }
   }
@@ -181,12 +185,9 @@ class DragHandler {
       // remove down handler
       _cancel("mouseDown", _targets[index]);
       _targets.removeAt(index);
-      if(dragOver != null) {
-        _cancel("mouseOver", element);
-      }
-      if(dragOut != null) {
-        _cancel("mouseOut", element);
-      }
+      // TOD if have subscribers?
+      _cancel("mouseOver", element);
+      _cancel("mouseOut", element);
     }
   }
   /// Remove targets from the set
@@ -235,52 +236,33 @@ class DragHandler {
     //print("mouse down, enabled: $enabled");
     // TODO if(!_dragging)?
     
-    // TODO if we check for non-null handlers here, before we attach them,
-    // then they won't be called if they are set during the actual drag
-    // unless we explicitly check in a setter
-    
     // store the current target
     // TODO should we get the element explicitly from our own list?
     // TODO or is event.currentTarget safely the same?
     _currentTarget = event.currentTarget;
     
     // set dragging flag
-    // TODO have an intermediate state where we notice
-    // the mouse down and watch for the other events,
-    // but we don't set _dragging or do callbacks
-    // until we actually get a mouse move
-    // TODO we should also save the event object and not send
-    // the callback until we get the mouse move?
     _dragStartPending = true;
     _startEvent = event;
-    //_dragging = true;
     
     // register for a move event if the callback exists
-    if(drag != null) {
-      // TODO as Element?
-      _listen("mouseMove", document);
+    // TODO if streams have subscribers?
+    _listen("mouseMove", document);
+    // register for mouse over event on all elements
+    for(Element e in _targets) {
+      _listen("mouseOver", e, true);
     }
-    // register for mouse over event on all elements if the callback exists
-    if(dragOver != null) {
-      for(Element e in _targets) {
-        _listen("mouseOver", e, true);
-      }
-    }
-    // register for mouse out event on all elements if the callback exists
-    if(dragOut != null) {
-      for(Element e in _targets) {
-        _listen("mouseOut", e, true);
-      }
+    // register for mouse out event on all elements
+    for(Element e in _targets) {
+      _listen("mouseOut", e, true);
     }
   }
   
   void _pendingToDrag() {
     if(_dragStartPending) {
       
-      // call start callback if it exists
-      if(dragStart != null) {
-        dragStart(this, _currentTarget, _startEvent);
-      }
+      // send start event
+      _dragStartStreamController.add(new DragEvent(this, _currentTarget, _startEvent));
       
       // switch from pending to dragging
       _dragStartPending = false;
@@ -296,10 +278,8 @@ class DragHandler {
     // do actual start in case we were pending before
     _pendingToDrag();
     
-    // call the drag in callback
-    if(dragOver != null) {
-      dragOver(this, event.currentTarget, event);
-    }
+    // send over event
+    _dragOverStreamController.add(new DragEvent(this, event.currentTarget, event));
   }
   void _mouseOutHandler(MouseEvent event) {
     // only respond to this event when the element we're going to is
@@ -309,31 +289,19 @@ class DragHandler {
     // do actual start in case we were pending before
     _pendingToDrag();
     
-    // call the drag out callback
-    if(dragOut != null) {
-      dragOut(this, event.currentTarget, event);
-    }
+    // send out event
+    _dragOutStreamController.add(new DragEvent(this, event.currentTarget, event));
   }
   void _mouseMoveHandler(MouseEvent event) {
     // do actual start in case we were pending before
     _pendingToDrag();
 
-    //print("mouse move, enabled: $enabled, dragging: $_dragging");
-    // call the drag callback
-    // TODO is currentTarget the correct thing?
-    // TODO if so, we don't really need to pass it as a para
-    // because it's in event
-    // TODO now that we store _currentTarget, we should probably use that
-    // TODO now that we store _currentTarget, we should definitely use that,
-    // TODO because this event was attached to body
-    if(drag != null) {
-      drag(this, _currentTarget, event);
-    }
+    // send drag event
+    _dragStreamController.add(new DragEvent(this, _currentTarget, event));
   }
   
   // the method that will be called on mouse up events when autostop is on
   void _autoStopUpHandler(MouseEvent event) {
-    //print("auto stop handling, enabled: $enabled, dragging: $_dragging");
     // stop the drag
     // only call if we are currently dragging and enabled
     if((_dragStartPending || _dragging) && enabled) {
@@ -347,32 +315,22 @@ class DragHandler {
     // signal that we are no longer dragging
     _dragging = false;
     
-    // TODO if callbacks are set to null during a drag,
-    // they will never be removed. we should define a setter that checks
-    
     // TODO if elements are changed during a drag, they won't be removed either
     
     // remove callbacks
-    if(drag != null) {
-      // TODO this can just be paused
-      // TODO as Element?
-      _cancel("mouseMove", document);
+    // TODO this can just be paused
+    // TODO as Element?
+    _cancel("mouseMove", document);
+    for(Element e in _targets) {
+      _cancel("mouseOver", e);
     }
-    if(dragOver != null) {
-      for(Element e in _targets) {
-        _cancel("mouseOver", e);
-      }
-    }
-    if(dragOut != null) {
-      for(Element e in _targets) {
-        _cancel("mouseOut", e);
-      }
+    for(Element e in _targets) {
+      _cancel("mouseOut", e);
     }
     
-    // call the end callback
-    // only do callback if we weren't just pending
-    if(dragEnd != null && !_dragStartPending) {
-      dragEnd(this, _currentTarget, event);
+    // send end event if we weren't just pending
+    if(!_dragStartPending) {
+      _dragEndStreamController.add(new DragEvent(this, _currentTarget, event));
     }
     
     // clear current target
