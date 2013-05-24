@@ -11,7 +11,10 @@ class DragEvent {
   Element element;
   /// The [MouseEvent] that instigated the drag handler event
   MouseEvent mouseEvent;
-  DragEvent(DragHandler this.dragHandler, Element this.element, MouseEvent this.mouseEvent);
+  /// For out events, the [Element] being dragged out of
+  /// For over events, the [Element] being dragged over
+  Element other;
+  DragEvent(DragHandler this.dragHandler, Element this.element, MouseEvent this.mouseEvent, [Element this.other]);
 }
 
 // TODO make universal enable/disable flag
@@ -282,7 +285,7 @@ class DragHandler {
     _pendingToDrag();
     
     // send over event
-    _dragOverStreamController.add(new DragEvent(this, event.currentTarget, event));
+    _dragOverStreamController.add(new DragEvent(this, _currentTarget, event, event.currentTarget));
   }
   void _mouseOutHandler(MouseEvent event) {
     // only respond to this event when the element we're going to is
@@ -293,7 +296,7 @@ class DragHandler {
     _pendingToDrag();
     
     // send out event
-    _dragOutStreamController.add(new DragEvent(this, event.currentTarget, event));
+    _dragOutStreamController.add(new DragEvent(this, _currentTarget, event, event.currentTarget));
   }
   void _mouseMoveHandler(MouseEvent event) {
     // do actual start in case we were pending before
