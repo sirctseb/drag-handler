@@ -156,7 +156,7 @@ class DragHandler {
   MouseEvent _startEvent;
 
   // The set of elements the handler watches for drags on
-  List<Element> _targets = [];
+  Set<Element> _targets = new Set<Element>();
   
   /// Add a target to the set
   void addTarget(Element element) {
@@ -183,11 +183,10 @@ class DragHandler {
   }
   /// Remove a target from the set
   void removeTarget(Element element) {
-    int index = _targets.indexOf(element);
-    if(index != -1) {
+    if(_targets.contains(element)) {
       // remove down handler
-      _cancel("mouseDown", _targets[index]);
-      _targets.removeAt(index);
+      _cancel("mouseDown", element);
+      _targets.remove(element);
       // TOD if have subscribers?
       _cancel("mouseOver", element);
       _cancel("mouseOut", element);
