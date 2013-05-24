@@ -207,8 +207,11 @@ class DragHandler {
   /// Construct a handler with an Element or List<Element>
   DragHandler(target) {
     // add initial element(s)
-    if(target is Element) _targets.add(target);
-    else if(target is List<Element>) _targets.addAll(target);
+    // non-null check helps dart2js
+    if(target != null) {
+      if(target is Element) _targets.add(target);
+      else if(target is List<Element>) _targets.addAll(target);
+    }
     
     // store a reference to the autostop up handler so we can add and remove it
     _mouseUp = _autoStopUpHandler;
