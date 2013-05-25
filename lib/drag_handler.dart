@@ -155,30 +155,39 @@ class DragHandler {
   // the mouse down event that starts a drag
   MouseEvent _startEvent;
 
-  // The set of elements the handler watches for drags on
+  // The set of elements the handler watches for drags on. These are watched for start, end and move
   Set<Element> _targets = new Set<Element>();
+  // The set of elements to watch for over events on
+  Set<Element> _overTargets = new Set<Element>();
+  // The set of elements to watch for out events on
+  Set<Element> _outTargets = new Set<Element>();
   
   /// Add a target to the set
-  void addTarget(Element element) {
-    // save size to compare with size after
-    int oldSize = _targets.length;
-    // add element
-    _targets.add(element);
-    // if size is bigger, the element is new, so add down handler
-    if(_targets.length > oldSize && enabled) {
-      _listen("mouseDown", element);
-      // if dragging or pending, add event handlers to the new element
-      if(_dragging || _dragStartPending) {
-        // TODO if have subscribers?
+  void addTarget(Element element, {bool drag: true, bool over: true, bool out: true}) {
+    // TODO should use an enum instead of strings for event IDs
+    if(drag && !_targets.contains(element)) {
+      _targets.add(element);
+      if(enabled) {
+        _listen("mouseDown", element);
+      }
+    }
+    if(over && !_overTargets.contains(element)) {
+      _overTargets.add(element);
+      if(enabled && (_dragging || _dragStartPending)) {
         _listen("mouseOver", element, true);
+      }
+    }
+    if(out && !_outTargets.contains(element)) {
+      _outTargets.add(element);
+      if(enabled && (_dragging || _dragStartPending)) {
         _listen("mouseOut", element, true);
       }
     }
   }
   /// Add targets to the set
-  void addTargets(Iterable<Element> elements) {
+  void addTargets(Iterable<Element> elements, {bool drag: true, bool over: true, bool out:true}) {
     for(Element element in elements) {
-      addTarget(element);
+      addTarget(element, drag: drag, over: over, out: out);
     }
   }
   /// Remove a target from the set
@@ -187,9 +196,15 @@ class DragHandler {
       // remove down handler
       _cancel("mouseDown", element);
       _targets.remove(element);
+    }
+    if(_overTargets.contains(element)) {
       // TOD if have subscribers?
       _cancel("mouseOver", element);
+      _overTargets.remove(element);
+    }
+    if(_outTargets.contains(element)) {
       _cancel("mouseOut", element);
+      _outTargets.remove(element);
     }
   }
   /// Remove targets from the set
@@ -208,12 +223,6 @@ class DragHandler {
   
   /// Construct a handler with an Element or List<Element>
   DragHandler(target) {
-    // add initial element(s)
-    // non-null check helps dart2js
-    if(target != null) {
-      if(target is Element) _targets.add(target);
-      else if(target is List<Element>) _targets.addAll(target);
-    }
     
     // store a reference to the autostop up handler so we can add and remove it
     _mouseUp = _autoStopUpHandler;
@@ -223,8 +232,15 @@ class DragHandler {
     _mouseMove = _mouseMoveHandler;
     
     // add mouse down handlers to the targets
-    for(Element t in _targets) {
+    /*for(Element t in _targets) {
       _listen("mouseDown", t);
+    }*/
+    
+    // add initial element(s)
+    // non-null check helps dart2js
+    if(target != null) {
+      if(target is Element) addTarget(target);
+      else if(target is List<Element>) addTargets(target);
     }
     
     // set autostop on by default
@@ -254,11 +270,11 @@ class DragHandler {
     // TODO if streams have subscribers?
     _listen("mouseMove", document);
     // register for mouse over event on all elements
-    for(Element e in _targets) {
+    for(Element e in _overTargets) {
       _listen("mouseOver", e, true);
     }
     // register for mouse out event on all elements
-    for(Element e in _targets) {
+    for(Element e in _outTargets) {
       _listen("mouseOut", e, true);
     }
   }
@@ -326,10 +342,10 @@ class DragHandler {
     // TODO this can just be paused
     // TODO as Element?
     _cancel("mouseMove", document);
-    for(Element e in _targets) {
+    for(Element e in _overTargets) {
       _cancel("mouseOver", e);
     }
-    for(Element e in _targets) {
+    for(Element e in _outTargets) {
       _cancel("mouseOut", e);
     }
     
