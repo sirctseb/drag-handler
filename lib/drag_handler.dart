@@ -19,6 +19,7 @@ class DragEvent {
 
 // TODO make universal enable/disable flag
 class DragHandler {
+  static final _logger = new Logger("drag-handler")..level = Level.FINER;
   
   // stream controllers
   StreamController<DragEvent> _dragStreamController = new StreamController<DragEvent>();
@@ -56,6 +57,7 @@ class DragHandler {
       handler = _mouseOut;
       provider = Element.mouseOutEvent;
     }
+    _logger.fine("listening for $event for element ${element.hashCode}, capture: $useCapture");
     subscriptions[element.hashCode] = provider.forTarget(element, useCapture:useCapture).listen(handler);
   }
   void _cancel(String event, Node element) {
@@ -70,6 +72,7 @@ class DragHandler {
       subscriptions = _mouseOutSubscriptions;
     }
     if(subscriptions.containsKey(element.hashCode)) {
+      _logger.fine("cancelling $event for element ${element.hashCode}");
       subscriptions[element.hashCode].cancel();
     }
     subscriptions.remove(element.hashCode);
@@ -91,16 +94,20 @@ class DragHandler {
   StreamSubscription _mouseUpSubscription;
   set autoStop(bool a) {
     if(_autoStop != a) {
+      _logger.finer("changing autoStop to $a");
       _autoStop = a;
       if(a) {
         // register up handler or resume existing
         if(_mouseUpSubscription == null) {
+          _logger.finest("adding mouse up event to document");
           _mouseUpSubscription = document.onMouseUp.listen(_mouseUp);
         } else {
+          _logger.finest("resuming mouse up event on document");
           _mouseUpSubscription.resume();
         }
       } else {
         // pause up handler
+        _logger.finest("pausing mouse up event on document");
         _mouseUpSubscription.pause();
       }
     }
@@ -111,6 +118,7 @@ class DragHandler {
   bool get enabled => _enabled;
   bool _delayedDisable = false;
   set enabled(bool e) {
+    _logger.fine("setting enabled to $e");
     // if we are currently dragging, delay a disable until it ends
     // TODO yikes, this is kind of scary
     if(_dragging && _enabled && !e) {
@@ -168,24 +176,28 @@ class DragHandler {
     if(drag && !_targets.contains(element)) {
       _targets.add(element);
       if(enabled) {
+        _logger.finer("adding mouse down to ${element.hashCode}");
         _listen("mouseDown", element);
       }
     }
     if(over && !_overTargets.contains(element)) {
       _overTargets.add(element);
       if(enabled && (_dragging || _dragStartPending)) {
+        _logger.finer("adding mouse over to ${element.hashCode}");
         _listen("mouseOver", element, true);
       }
     }
     if(out && !_outTargets.contains(element)) {
       _outTargets.add(element);
       if(enabled && (_dragging || _dragStartPending)) {
+        _logger.finer("adding mouse out to ${element.hashCode}");
         _listen("mouseOut", element, true);
       }
     }
   }
   /// Add targets to the set
   void addTargets(Iterable<Element> elements, {bool drag: true, bool over: true, bool out:true}) {
+    _logger.fine("adding ${elements.length} elements, drag: $drag, over: $over, out: $out");
     for(Element element in elements) {
       addTarget(element, drag: drag, over: over, out: out);
     }
@@ -196,26 +208,32 @@ class DragHandler {
       // remove down handler
       _cancel("mouseDown", element);
       _targets.remove(element);
+      _logger.finer("removing ${element.hashCode} and cancelling mouse down");
     }
     if(_overTargets.contains(element)) {
       // TOD if have subscribers?
       _cancel("mouseOver", element);
       _overTargets.remove(element);
+      _logger.finer("removing ${element.hashCode} and cancelling mouse over");
     }
     if(_outTargets.contains(element)) {
       _cancel("mouseOut", element);
       _outTargets.remove(element);
+      _logger.finer("removing ${element.hashCode} and cancelling mouse out");
     }
   }
   /// Remove targets from the set
   void removeTargets(List<Element> elements) {
+    _logger.fine("removing ${elements.length} elements");
     for(Element element in elements) {
       removeTarget(element);
     }
   }
   /// Remove all targets
   void removeAllTargets() {
+    _logger.fine("removing all elements");
     removeTargets(new List.from(_targets));
+    // TODO need to remove all from out and over as well
   }
   
   // The element that the current drag started on
@@ -251,6 +269,8 @@ class DragHandler {
     // if there is a condition callback, call it to see if we should start the drag
     if(dragConditions != null && !dragConditions(this, event.currentTarget, event)) return;
     
+    _logger.fine("got mouse down event for ${event.currentTarget.hashCode}");
+    
     // to prevent selection during drag
     event.preventDefault();
     
@@ -281,6 +301,7 @@ class DragHandler {
   
   void _pendingToDrag() {
     if(_dragStartPending) {
+      _logger.finer("changing states from pending to dragging");
       
       // send start event
       _dragStartStreamController.add(new DragEvent(this, _currentTarget, _startEvent));
@@ -296,6 +317,8 @@ class DragHandler {
     // not a child of the element the event was attached to
     if((event.currentTarget as Element).contains(event.fromElement)) return;
     
+    _logger.fine("got mouse over event for ${event.currentTarget.hashCode}");
+    
     // do actual start in case we were pending before
     _pendingToDrag();
     
@@ -307,6 +330,8 @@ class DragHandler {
     // not a child of the element the event was attached to
     if((event.currentTarget as Element).contains(event.toElement)) return;
     
+    _logger.fine("got mouse out event for ${event.currentTarget.hashCode}");
+    
     // do actual start in case we were pending before
     _pendingToDrag();
     
@@ -314,6 +339,8 @@ class DragHandler {
     _dragOutStreamController.add(new DragEvent(this, _currentTarget, event, event.currentTarget));
   }
   void _mouseMoveHandler(MouseEvent event) {
+    _logger.finest("got mouse move event");
+    
     // do actual start in case we were pending before
     _pendingToDrag();
 
@@ -326,12 +353,14 @@ class DragHandler {
     // stop the drag
     // only call if we are currently dragging and enabled
     if((_dragStartPending || _dragging) && enabled) {
+      _logger.fine("stopping drag for auto stop");
       stopDrag(event);
     }
   }
   
   /// Manually end the drag
   void stopDrag([MouseEvent event]) {
+    _logger.fine("stopping drag");
     
     // signal that we are no longer dragging
     _dragging = false;
