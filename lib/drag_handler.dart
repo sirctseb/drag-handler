@@ -19,7 +19,7 @@ class DragEvent {
 
 // TODO make universal enable/disable flag
 class DragHandler {
-  static final _logger = new Logger("drag-handler")..level = Level.FINER;
+  static final _logger = new Logger("drag-handler")..level = Level.OFF;
   
   // stream controllers
   StreamController<DragEvent> _dragStreamController = new StreamController<DragEvent>();
