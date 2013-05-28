@@ -233,6 +233,8 @@ class DragHandler {
   void removeAllTargets() {
     _logger.fine("removing all elements");
     removeTargets(new List.from(_targets));
+    removeTargets(new List.from(_outTargets));
+    removeTargets(new List.from(_overTargets));
     // TODO need to remove all from out and over as well
   }
   
