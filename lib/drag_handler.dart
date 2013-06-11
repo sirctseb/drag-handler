@@ -15,6 +15,62 @@ class DragEvent {
   /// For over events, the [Element] being dragged over
   Element other;
   DragEvent(DragHandler this.dragHandler, Element this.element, MouseEvent this.mouseEvent, [Element this.other]);
+  
+  /// Whether this event corresponds to the last drag event of
+  /// its type (up, down, move, out, over) that was received
+  // return true here for up and down and implement in subclasses for others
+  bool get lastEvent => true; 
+}
+/// The event class that is sent with drag over stream event updates
+class DragOverEvent extends DragEvent {
+  
+  /// Whether this event corresponds to the last drag event that was received
+  // TODO from a software engineering standpoint, the _lastOver should be
+  // separate for each DragHandler. But due to the nature of dragging, it doesn't matter
+  bool get lastEvent => this == _lastOver;
+  
+  // create a drag over event
+  DragOverEvent(DragHandler handler, Element element, MouseEvent event, Element over)
+      : super(handler, element, event, over) {
+    // TODO this assumes we only create these when real over events are received
+    // TODO if one is created for some other reason then _lastOver will not be correct
+    _lastOver = this;
+  }
+  
+  // The last drag over event created
+  static DragOverEvent _lastOver;
+}
+/// The event class that is sent with drag out stream event updates
+class DragOutEvent extends DragEvent {
+  
+  /// Whether this event corresponds to the last drag out event that was received
+  bool get lastEvent => this == _lastOut;
+  
+  // create a drag out event
+  DragOutEvent(DragHandler handler, Element element, MouseEvent event, Element over)
+      : super(handler, element, event, over) {
+    // TODO this assumes we only create these when real over events are received
+    // TODO if one is created for some other reason then _lastOver will not be correct
+    _lastOut = this;
+  }
+  
+  // The last drag out event created
+  static DragOutEvent _lastOut;
+}
+/// The event class that is sent with drag move stream event updates
+class DragMoveEvent extends DragEvent {
+  
+  /// Whether this event corresponds to the last drag out event that was received
+  bool get lastEvent => this == _lastMove;
+  
+  // create drag move event
+  DragMoveEvent(DragHandler handler, Element element, MouseEvent event)
+      : super(handler, element, event) {
+    _lastMove = this;
+  }
+  
+  // The last drag move event created
+  static DragMoveEvent _lastMove;
 }
 
 // TODO make universal enable/disable flag
@@ -325,7 +381,7 @@ class DragHandler {
     _pendingToDrag();
     
     // send over event
-    _dragOverStreamController.add(new DragEvent(this, _currentTarget, event, event.currentTarget));
+    _dragOverStreamController.add(new DragOverEvent(this, _currentTarget, event, event.currentTarget));
   }
   void _mouseOutHandler(MouseEvent event) {
     // only respond to this event when the element we're going to is
@@ -338,7 +394,7 @@ class DragHandler {
     _pendingToDrag();
     
     // send out event
-    _dragOutStreamController.add(new DragEvent(this, _currentTarget, event, event.currentTarget));
+    _dragOutStreamController.add(new DragOutEvent(this, _currentTarget, event, event.currentTarget));
   }
   void _mouseMoveHandler(MouseEvent event) {
     _logger.finest("got mouse move event");
@@ -347,7 +403,7 @@ class DragHandler {
     _pendingToDrag();
 
     // send drag event
-    _dragStreamController.add(new DragEvent(this, _currentTarget, event));
+    _dragStreamController.add(new DragMoveEvent(this, _currentTarget, event));
   }
   
   // the method that will be called on mouse up events when autostop is on
