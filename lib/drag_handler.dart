@@ -259,39 +259,38 @@ class DragHandler {
     }
   }
   /// Remove a target from the set
-  void removeTarget(Element element) {
-    if(_targets.contains(element)) {
+  void removeTarget(Element element, {bool drag: true, bool over: true, bool out: true}) {
+    if(drag && _targets.contains(element)) {
       // remove down handler
       _cancel("mouseDown", element);
       _targets.remove(element);
       _logger.finer("removing ${element.hashCode} and cancelling mouse down");
     }
-    if(_overTargets.contains(element)) {
+    if(over && _overTargets.contains(element)) {
       // TOD if have subscribers?
       _cancel("mouseOver", element);
       _overTargets.remove(element);
       _logger.finer("removing ${element.hashCode} and cancelling mouse over");
     }
-    if(_outTargets.contains(element)) {
+    if(out && _outTargets.contains(element)) {
       _cancel("mouseOut", element);
       _outTargets.remove(element);
       _logger.finer("removing ${element.hashCode} and cancelling mouse out");
     }
   }
   /// Remove targets from the set
-  void removeTargets(List<Element> elements) {
+  void removeTargets(List<Element> elements, {bool drag: true, bool over: true, bool out: true}) {
     _logger.fine("removing ${elements.length} elements");
     for(Element element in elements) {
-      removeTarget(element);
+      removeTarget(element, drag: drag, over: over, out: out);
     }
   }
   /// Remove all targets
-  void removeAllTargets() {
+  void removeAllTargets({bool drag: true, bool over: true, bool out: true}) {
     _logger.fine("removing all elements");
-    removeTargets(new List.from(_targets));
-    removeTargets(new List.from(_outTargets));
-    removeTargets(new List.from(_overTargets));
-    // TODO need to remove all from out and over as well
+    if(drag) removeTargets(new List.from(_targets));
+    if(out) removeTargets(new List.from(_outTargets));
+    if(over) removeTargets(new List.from(_overTargets));
   }
   
   // The element that the current drag started on
