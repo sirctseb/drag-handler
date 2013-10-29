@@ -310,8 +310,8 @@ class DragHandler {
     if(over) removeTargets(new List.from(_overTargets));
   }
 
-  // The element that the current drag started on
-  Element _currentTarget;
+  /// The element that the current drag started on
+  Element currentTarget;
 
   /// Construct a handler with an Element or List<Element>
   DragHandler(target) {
@@ -346,7 +346,7 @@ class DragHandler {
     // store the current target
     // TODO should we get the element explicitly from our own list?
     // TODO or is event.currentTarget safely the same?
-    _currentTarget = event.currentTarget;
+    currentTarget = event.currentTarget;
 
     // set dragging flag
     _dragStartPending = true;
@@ -371,7 +371,7 @@ class DragHandler {
       _logger.finer("changing states from pending to dragging");
 
       // send start event
-      _dragStartStreamController.add(new DragEvent._(this, _currentTarget, _startEvent));
+      _dragStartStreamController.add(new DragEvent._(this, currentTarget, _startEvent));
 
       // switch from pending to dragging
       _dragStartPending = false;
@@ -390,7 +390,7 @@ class DragHandler {
     _pendingToDrag();
 
     // send over event
-    _dragOverStreamController.add(new DragOverEvent._(this, _currentTarget, event, event.currentTarget));
+    _dragOverStreamController.add(new DragOverEvent._(this, currentTarget, event, event.currentTarget));
   }
   void _mouseOutHandler(MouseEvent event) {
     // only respond to this event when the element we're going to is
@@ -403,7 +403,7 @@ class DragHandler {
     _pendingToDrag();
 
     // send out event
-    _dragOutStreamController.add(new DragOutEvent._(this, _currentTarget, event, event.currentTarget));
+    _dragOutStreamController.add(new DragOutEvent._(this, currentTarget, event, event.currentTarget));
   }
   void _mouseMoveHandler(MouseEvent event) {
     _logger.finest("got mouse move event");
@@ -412,7 +412,7 @@ class DragHandler {
     _pendingToDrag();
 
     // send drag event
-    _dragStreamController.add(new DragMoveEvent._(this, _currentTarget, event));
+    _dragStreamController.add(new DragMoveEvent._(this, currentTarget, event));
   }
 
   // the method that will be called on mouse up events when autostop is on
@@ -446,11 +446,11 @@ class DragHandler {
 
     // send end event if we weren't just pending
     if(!_dragStartPending) {
-      _dragEndStreamController.add(new DragEvent._(this, _currentTarget, event));
+      _dragEndStreamController.add(new DragEvent._(this, currentTarget, event));
     }
 
     // clear current target
-    _currentTarget = null;
+    currentTarget = null;
 
     // if we are on a delayed disable, do the disable
     if(_delayedDisable) {
