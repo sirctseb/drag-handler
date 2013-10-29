@@ -4,7 +4,7 @@ import "dart:html";
 import "dart:async";
 import "package:logging/logging.dart";
 
-// type of a function that determines if a drag should be allowed to start
+/// Function that determines if a drag should be allowed to start
 typedef bool AllowDragStart(DragHandler dragHandler, Element element, MouseEvent event);
 
 /// The event class that is sent with drag handler stream event updates
@@ -18,24 +18,23 @@ class DragEvent {
   /// For out events, the [Element] being dragged out of
   /// For over events, the [Element] being dragged over
   Element other;
-  DragEvent(DragHandler this.dragHandler, Element this.element, MouseEvent this.mouseEvent, [Element this.other]);
+  DragEvent._(DragHandler this.dragHandler, Element this.element, MouseEvent this.mouseEvent, [Element this.other]);
 
   /// Whether this event corresponds to the last drag event of
   /// its type (up, down, move, out, over) that was received
   // return true here for up and down and implement in subclasses for others
   bool get lastEvent => true;
 }
+
 /// The event class that is sent with drag over stream event updates
 class DragOverEvent extends DragEvent {
 
   /// Whether this event corresponds to the last drag event that was received
-  // TODO from a software engineering standpoint, the _lastOver should be
-  // separate for each DragHandler. But due to the nature of dragging, it doesn't matter
   bool get lastEvent => this == _lastOver;
 
   // create a drag over event
-  DragOverEvent(DragHandler handler, Element element, MouseEvent event, Element over)
-      : super(handler, element, event, over) {
+  DragOverEvent._(DragHandler handler, Element element, MouseEvent event, Element over)
+      : super._(handler, element, event, over) {
     // TODO this assumes we only create these when real over events are received
     // TODO if one is created for some other reason then _lastOver will not be correct
     _lastOver = this;
@@ -44,6 +43,7 @@ class DragOverEvent extends DragEvent {
   // The last drag over event created
   static DragOverEvent _lastOver;
 }
+
 /// The event class that is sent with drag out stream event updates
 class DragOutEvent extends DragEvent {
 
@@ -51,8 +51,8 @@ class DragOutEvent extends DragEvent {
   bool get lastEvent => this == _lastOut;
 
   // create a drag out event
-  DragOutEvent(DragHandler handler, Element element, MouseEvent event, Element over)
-      : super(handler, element, event, over) {
+  DragOutEvent._(DragHandler handler, Element element, MouseEvent event, Element over)
+      : super._(handler, element, event, over) {
     // TODO this assumes we only create these when real over events are received
     // TODO if one is created for some other reason then _lastOver will not be correct
     _lastOut = this;
@@ -61,6 +61,7 @@ class DragOutEvent extends DragEvent {
   // The last drag out event created
   static DragOutEvent _lastOut;
 }
+
 /// The event class that is sent with drag move stream event updates
 class DragMoveEvent extends DragEvent {
 
@@ -68,8 +69,8 @@ class DragMoveEvent extends DragEvent {
   bool get lastEvent => this == _lastMove;
 
   // create drag move event
-  DragMoveEvent(DragHandler handler, Element element, MouseEvent event)
-      : super(handler, element, event) {
+  DragMoveEvent._(DragHandler handler, Element element, MouseEvent event)
+      : super._(handler, element, event) {
     _lastMove = this;
   }
 
@@ -77,9 +78,8 @@ class DragMoveEvent extends DragEvent {
   static DragMoveEvent _lastMove;
 }
 
-// TODO make universal enable/disable flag
 class DragHandler {
-  static final _logger = new Logger("drag-handler")..level = Level.OFF;
+  static final _logger = new Logger("drag-handler");
 
   // stream controllers
   StreamController<DragEvent> _dragStreamController = new StreamController<DragEvent>();
@@ -87,6 +87,7 @@ class DragHandler {
   StreamController<DragEvent> _dragEndStreamController = new StreamController<DragEvent>();
   StreamController<DragEvent> _dragOutStreamController = new StreamController<DragEvent>();
   StreamController<DragEvent> _dragOverStreamController = new StreamController<DragEvent>();
+
   /// Exposed drag handler event streams
   Stream<DragEvent> get onDrag => _dragStreamController.stream;
   Stream<DragEvent> get onDragStart => _dragStartStreamController.stream;
@@ -137,6 +138,7 @@ class DragHandler {
     }
     subscriptions.remove(element.hashCode);
   }
+
   // references to the local mouse event handlers
   var _mouseDown;
   Map<int, StreamSubscription> _mouseDownSubscriptions = new Map();
@@ -180,7 +182,6 @@ class DragHandler {
   set enabled(bool e) {
     _logger.fine("setting enabled to $e");
     // if we are currently dragging, delay a disable until it ends
-    // TODO yikes, this is kind of scary
     if(_dragging && _enabled && !e) {
       _delayedDisable = true;
       return;
@@ -209,9 +210,6 @@ class DragHandler {
         }
       }
     }
-
-    // TODO should we actually remove the up handler?
-    // TODO currently we just check for enabled in up handler
   }
 
   // true iff a drag is occurring
@@ -232,7 +230,6 @@ class DragHandler {
 
   /// Add a target to the set
   void addTarget(Element element, {bool drag: true, bool over: true, bool out: true}) {
-    // TODO should use an enum instead of strings for event IDs
     if(drag && !_targets.contains(element)) {
       _targets.add(element);
       if(enabled) {
@@ -310,11 +307,6 @@ class DragHandler {
     _mouseOut = _mouseOutHandler;
     _mouseMove = _mouseMoveHandler;
 
-    // add mouse down handlers to the targets
-    /*for(Element t in _targets) {
-      _listen("mouseDown", t);
-    }*/
-
     // add initial element(s)
     // non-null check helps dart2js
     if(target != null) {
@@ -335,9 +327,6 @@ class DragHandler {
     // to prevent selection during drag
     event.preventDefault();
 
-    //print("mouse down, enabled: $enabled");
-    // TODO if(!_dragging)?
-
     // store the current target
     // TODO should we get the element explicitly from our own list?
     // TODO or is event.currentTarget safely the same?
@@ -348,12 +337,13 @@ class DragHandler {
     _startEvent = event;
 
     // register for a move event if the callback exists
-    // TODO if streams have subscribers?
     _listen("mouseMove", document);
+
     // register for mouse over event on all elements
     for(Element e in _overTargets) {
       _listen("mouseOver", e, true);
     }
+
     // register for mouse out event on all elements
     for(Element e in _outTargets) {
       _listen("mouseOut", e, true);
@@ -365,7 +355,7 @@ class DragHandler {
       _logger.finer("changing states from pending to dragging");
 
       // send start event
-      _dragStartStreamController.add(new DragEvent(this, _currentTarget, _startEvent));
+      _dragStartStreamController.add(new DragEvent._(this, _currentTarget, _startEvent));
 
       // switch from pending to dragging
       _dragStartPending = false;
@@ -384,7 +374,7 @@ class DragHandler {
     _pendingToDrag();
 
     // send over event
-    _dragOverStreamController.add(new DragOverEvent(this, _currentTarget, event, event.currentTarget));
+    _dragOverStreamController.add(new DragOverEvent._(this, _currentTarget, event, event.currentTarget));
   }
   void _mouseOutHandler(MouseEvent event) {
     // only respond to this event when the element we're going to is
@@ -397,7 +387,7 @@ class DragHandler {
     _pendingToDrag();
 
     // send out event
-    _dragOutStreamController.add(new DragOutEvent(this, _currentTarget, event, event.currentTarget));
+    _dragOutStreamController.add(new DragOutEvent._(this, _currentTarget, event, event.currentTarget));
   }
   void _mouseMoveHandler(MouseEvent event) {
     _logger.finest("got mouse move event");
@@ -406,7 +396,7 @@ class DragHandler {
     _pendingToDrag();
 
     // send drag event
-    _dragStreamController.add(new DragMoveEvent(this, _currentTarget, event));
+    _dragStreamController.add(new DragMoveEvent._(this, _currentTarget, event));
   }
 
   // the method that will be called on mouse up events when autostop is on
@@ -430,7 +420,6 @@ class DragHandler {
 
     // remove callbacks
     // TODO this can just be paused
-    // TODO as Element?
     _cancel("mouseMove", document);
     for(Element e in _overTargets) {
       _cancel("mouseOver", e);
@@ -441,7 +430,7 @@ class DragHandler {
 
     // send end event if we weren't just pending
     if(!_dragStartPending) {
-      _dragEndStreamController.add(new DragEvent(this, _currentTarget, event));
+      _dragEndStreamController.add(new DragEvent._(this, _currentTarget, event));
     }
 
     // clear current target
