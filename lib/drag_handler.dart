@@ -4,6 +4,8 @@ import "dart:html";
 import "dart:async";
 import "package:logging/logging.dart";
 
+// TODO long form documentation at top
+
 /// Function that determines if a drag should be allowed to start
 typedef bool AllowDragStart(DragHandler dragHandler, Element element, MouseEvent event);
 
