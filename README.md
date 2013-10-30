@@ -73,3 +73,10 @@ dh.addTarget(querySelector("#drag-target"), drag: false, over: true, out: true);
     ```dart
 dh.enabled = false;
 ```
+
+* define conditions in which drags may begin
+
+    ```dart
+// don't react to mouse drags when application is loading
+dh.dragConditions = (DragHandler dh, Element e, MouseEvent me) => application_state == ApplicationState.LOADING;
+```
