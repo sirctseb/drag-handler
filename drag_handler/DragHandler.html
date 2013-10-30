@@ -1,0 +1,784 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>DragHandler class / drag_handler Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="drag_handler" data-type="DragHandler">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../drag_handler.html">drag_handler</a> &rsaquo; <a href="../drag_handler/DragHandler.html">DragHandler</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+<h2><div class="icon-library"></div><a href="../drag_handler.html">drag_handler</a></h2><ul class="icon">
+<li><a href="../drag_handler/AllowDragStart.html"><div class="icon-interface"></div>AllowDragStart</a></li>
+<li><a href="../drag_handler/DragEvent.html"><div class="icon-class"></div>DragEvent</a></li>
+<li><div class="icon-class"></div><strong>DragHandler</strong></li>
+<li><a href="../drag_handler/DragMoveEvent.html"><div class="icon-class"></div>DragMoveEvent</a></li>
+<li><a href="../drag_handler/DragOutEvent.html"><div class="icon-class"></div>DragOutEvent</a></li>
+<li><a href="../drag_handler/DragOverEvent.html"><div class="icon-class"></div>DragOverEvent</a></li>
+</ul>
+<h2><div class="icon-library"></div><a href="../logging.html">logging</a></h2><h2><div class="icon-library"></div><a href="../meta.html">meta</a></h2><h2><div class="icon-library"></div><a href="../metadata.html">metadata</a></h2><h2><div class="icon-library"></div><a href="../unmodifiable_collection.html">unmodifiable_collection</a></h2></div>
+<div class="content">
+        <h2><strong>DragHandler</strong>
+          class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<pre class="source">
+class DragHandler {
+ static final _logger = new Logger("drag-handler");
+
+ // stream controllers
+ StreamController&lt;DragEvent&gt; _dragStreamController = new StreamController&lt;DragEvent&gt;();
+ StreamController&lt;DragEvent&gt; _dragStartStreamController = new StreamController&lt;DragEvent&gt;();
+ StreamController&lt;DragEvent&gt; _dragEndStreamController = new StreamController&lt;DragEvent&gt;();
+ StreamController&lt;DragEvent&gt; _dragOutStreamController = new StreamController&lt;DragEvent&gt;();
+ StreamController&lt;DragEvent&gt; _dragOverStreamController = new StreamController&lt;DragEvent&gt;();
+
+ /// Exposed drag handler event streams
+ Stream&lt;DragEvent&gt; get onDrag =&gt; _dragStreamController.stream;
+ Stream&lt;DragEvent&gt; get onDragStart =&gt; _dragStartStreamController.stream;
+ Stream&lt;DragEvent&gt; get onDragEnd =&gt; _dragEndStreamController.stream;
+ Stream&lt;DragEvent&gt; get onDragOut =&gt; _dragOutStreamController.stream;
+ Stream&lt;DragEvent&gt; get onDragOver =&gt; _dragOverStreamController.stream;
+
+ /// The function to call to determine if the drag should be allowed to start on mouse down
+ AllowDragStart dragConditions;
+
+ // methods to subscribe / unsubscribe safely
+ void _listen(String event, Node element, [bool useCapture = false]) {
+   var subscriptions, handler, provider;
+   if(event == "mouseDown") {
+     subscriptions = _mouseDownSubscriptions;
+     handler = _mouseDown;
+     provider = Element.mouseDownEvent;
+   } else if(event == "mouseMove") {
+     subscriptions = _mouseMoveSubscriptions;
+     handler = _mouseMove;
+     provider = Element.mouseMoveEvent;
+   } else if(event == "mouseOver") {
+     subscriptions = _mouseOverSubscriptions;
+     handler = _mouseOver;
+     provider = Element.mouseOverEvent;
+   } else if(event == "mouseOut") {
+     subscriptions = _mouseOutSubscriptions;
+     handler = _mouseOut;
+     provider = Element.mouseOutEvent;
+   }
+   _logger.fine("listening for $event for element ${element.hashCode}, capture: $useCapture");
+   subscriptions[element.hashCode] = provider.forTarget(element, useCapture:useCapture).listen(handler);
+ }
+ void _cancel(String event, Node element) {
+   var subscriptions;
+   if(event == "mouseDown") {
+     subscriptions = _mouseDownSubscriptions;
+   } else if(event == "mouseMove") {
+     subscriptions = _mouseMoveSubscriptions;
+   } else if(event == "mouseOver") {
+     subscriptions = _mouseOverSubscriptions;
+   } else if(event == "mouseOut") {
+     subscriptions = _mouseOutSubscriptions;
+   }
+   if(subscriptions.containsKey(element.hashCode)) {
+     _logger.fine("cancelling $event for element ${element.hashCode}");
+     subscriptions[element.hashCode].cancel();
+   }
+   subscriptions.remove(element.hashCode);
+ }
+
+ // references to the local mouse event handlers
+ var _mouseDown;
+ Map&lt;int, StreamSubscription&gt; _mouseDownSubscriptions = new Map();
+ var _mouseMove;
+ Map&lt;int, StreamSubscription&gt; _mouseMoveSubscriptions = new Map();
+ var _mouseOver;
+ Map&lt;int, StreamSubscription&gt; _mouseOverSubscriptions = new Map();
+ var _mouseOut;
+ Map&lt;int, StreamSubscription&gt; _mouseOutSubscriptions = new Map();
+ var _mouseUp;
+
+ bool _autoStop;
+ /// True if we should automatically stop drags on mouse up
+ bool get autoStop =&gt; _autoStop;
+ StreamSubscription _mouseUpSubscription;
+ set autoStop(bool a) {
+   if(_autoStop != a) {
+     _logger.finer("changing autoStop to $a");
+     _autoStop = a;
+     if(a) {
+       // register up handler or resume existing
+       if(_mouseUpSubscription == null) {
+         _logger.finest("adding mouse up event to document");
+         _mouseUpSubscription = document.onMouseUp.listen(_mouseUp);
+       } else {
+         _logger.finest("resuming mouse up event on document");
+         _mouseUpSubscription.resume();
+       }
+     } else {
+       // pause up handler
+       _logger.finest("pausing mouse up event on document");
+       _mouseUpSubscription.pause();
+     }
+   }
+ }
+
+ bool _enabled = true;
+ /// True iff the handler is active
+ bool get enabled =&gt; _enabled;
+ bool _delayedDisable = false;
+ set enabled(bool e) {
+   _logger.fine("setting enabled to $e");
+   // if we are currently dragging, delay a disable until it ends
+   if(_dragging &amp;&amp; _enabled &amp;&amp; !e) {
+     _delayedDisable = true;
+     return;
+   }
+   // if we are enabled during a delayed disable, disable the delayed disable
+   if(_delayedDisable &amp;&amp; e) {
+     _delayedDisable = false;
+   }
+
+   // if we aren't changing state, don't do anything
+   if(_enabled != e) {
+
+     // update flag
+     _enabled = e;
+
+     // add or remove handlers
+     if(enabled) {
+       // add mouse down handlers to the targets
+       for(Element t in _targets) {
+         _listen("mouseDown", t);
+       }
+     } else {
+       // remove mouse down handlers from the targets
+       for(Element t in _targets) {
+         _cancel("mouseDown", t);
+       }
+     }
+   }
+ }
+
+ // true iff a drag is occurring
+ bool _dragging = false;
+
+ // true iff we got a mouse down and are waiting for the first move
+ // to actually start the drag
+ bool _dragStartPending = false;
+ // the mouse down event that starts a drag
+ MouseEvent _startEvent;
+
+ // The set of elements the handler watches for drags on. These are watched for start, end and move
+ Set&lt;Element&gt; _targets = new Set&lt;Element&gt;();
+ // The set of elements to watch for over events on
+ Set&lt;Element&gt; _overTargets = new Set&lt;Element&gt;();
+ // The set of elements to watch for out events on
+ Set&lt;Element&gt; _outTargets = new Set&lt;Element&gt;();
+
+ /// Add a target to the set
+ void addTarget(Element element, {bool drag: true, bool over: true, bool out: true}) {
+   if(drag &amp;&amp; !_targets.contains(element)) {
+     _targets.add(element);
+     if(enabled) {
+       _logger.finer("adding mouse down to ${element.hashCode}");
+       _listen("mouseDown", element);
+     }
+   }
+   if(over &amp;&amp; !_overTargets.contains(element)) {
+     _overTargets.add(element);
+     if(enabled &amp;&amp; (_dragging || _dragStartPending)) {
+       _logger.finer("adding mouse over to ${element.hashCode}");
+       _listen("mouseOver", element, true);
+     }
+   }
+   if(out &amp;&amp; !_outTargets.contains(element)) {
+     _outTargets.add(element);
+     if(enabled &amp;&amp; (_dragging || _dragStartPending)) {
+       _logger.finer("adding mouse out to ${element.hashCode}");
+       _listen("mouseOut", element, true);
+     }
+   }
+ }
+ /// Add targets to the set
+ void addTargets(Iterable&lt;Element&gt; elements, {bool drag: true, bool over: true, bool out:true}) {
+   _logger.fine("adding ${elements.length} elements, drag: $drag, over: $over, out: $out");
+   for(Element element in elements) {
+     addTarget(element, drag: drag, over: over, out: out);
+   }
+ }
+ /// Remove a target from the set
+ void removeTarget(Element element, {bool drag: true, bool over: true, bool out: true}) {
+   if(drag &amp;&amp; _targets.contains(element)) {
+     // remove down handler
+     _cancel("mouseDown", element);
+     _targets.remove(element);
+     _logger.finer("removing ${element.hashCode} and cancelling mouse down");
+   }
+   if(over &amp;&amp; _overTargets.contains(element)) {
+     // TOD if have subscribers?
+     _cancel("mouseOver", element);
+     _overTargets.remove(element);
+     _logger.finer("removing ${element.hashCode} and cancelling mouse over");
+   }
+   if(out &amp;&amp; _outTargets.contains(element)) {
+     _cancel("mouseOut", element);
+     _outTargets.remove(element);
+     _logger.finer("removing ${element.hashCode} and cancelling mouse out");
+   }
+ }
+ /// Remove targets from the set
+ void removeTargets(List&lt;Element&gt; elements, {bool drag: true, bool over: true, bool out: true}) {
+   _logger.fine("removing ${elements.length} elements");
+   for(Element element in elements) {
+     removeTarget(element, drag: drag, over: over, out: out);
+   }
+ }
+ /// Remove all targets
+ void removeAllTargets({bool drag: true, bool over: true, bool out: true}) {
+   _logger.fine("removing all elements");
+   if(drag) removeTargets(new List.from(_targets));
+   if(out) removeTargets(new List.from(_outTargets));
+   if(over) removeTargets(new List.from(_overTargets));
+ }
+
+ /// The element that the current drag started on
+ Element currentTarget;
+
+ /// Construct a handler with an Element or List&lt;Element&gt;
+ DragHandler(target) {
+
+   // store a reference to the autostop up handler so we can add and remove it
+   _mouseUp = _autoStopUpHandler;
+   _mouseDown = _mouseDownHandler;
+   _mouseOver = _mouseOverHandler;
+   _mouseOut = _mouseOutHandler;
+   _mouseMove = _mouseMoveHandler;
+
+   // add initial element(s)
+   // non-null check helps dart2js
+   if(target != null) {
+     if(target is Element) addTarget(target);
+     else if(target is List&lt;Element&gt;) addTargets(target);
+   }
+
+   // set autostop on by default
+   autoStop = true;
+ }
+
+ void _mouseDownHandler(MouseEvent event) {
+   // if there is a condition callback, call it to see if we should start the drag
+   if(dragConditions != null &amp;&amp; !dragConditions(this, event.currentTarget, event)) return;
+
+   _logger.fine("got mouse down event for ${event.currentTarget.hashCode}");
+
+   // to prevent selection during drag
+   event.preventDefault();
+
+   // store the current target
+   // TODO should we get the element explicitly from our own list?
+   // TODO or is event.currentTarget safely the same?
+   currentTarget = event.currentTarget;
+
+   // set dragging flag
+   _dragStartPending = true;
+   _startEvent = event;
+
+   // register for a move event if the callback exists
+   _listen("mouseMove", document);
+
+   // register for mouse over event on all elements
+   for(Element e in _overTargets) {
+     _listen("mouseOver", e, true);
+   }
+
+   // register for mouse out event on all elements
+   for(Element e in _outTargets) {
+     _listen("mouseOut", e, true);
+   }
+ }
+
+ void _pendingToDrag() {
+   if(_dragStartPending) {
+     _logger.finer("changing states from pending to dragging");
+
+     // send start event
+     _dragStartStreamController.add(new DragEvent._(this, currentTarget, _startEvent));
+
+     // switch from pending to dragging
+     _dragStartPending = false;
+     _dragging = true;
+   }
+ }
+
+ void _mouseOverHandler(MouseEvent event) {
+   // only respond to this event when the element being left is
+   // not a child of the element the event was attached to
+   if((event.currentTarget as Element).contains(event.fromElement)) return;
+
+   _logger.fine("got mouse over event for ${event.currentTarget.hashCode}");
+
+   // do actual start in case we were pending before
+   _pendingToDrag();
+
+   // send over event
+   _dragOverStreamController.add(new DragOverEvent._(this, currentTarget, event, event.currentTarget));
+ }
+ void _mouseOutHandler(MouseEvent event) {
+   // only respond to this event when the element we're going to is
+   // not a child of the element the event was attached to
+   if((event.currentTarget as Element).contains(event.toElement)) return;
+
+   _logger.fine("got mouse out event for ${event.currentTarget.hashCode}");
+
+   // do actual start in case we were pending before
+   _pendingToDrag();
+
+   // send out event
+   _dragOutStreamController.add(new DragOutEvent._(this, currentTarget, event, event.currentTarget));
+ }
+ void _mouseMoveHandler(MouseEvent event) {
+   _logger.finest("got mouse move event");
+
+   // do actual start in case we were pending before
+   _pendingToDrag();
+
+   // send drag event
+   _dragStreamController.add(new DragMoveEvent._(this, currentTarget, event));
+ }
+
+ // the method that will be called on mouse up events when autostop is on
+ void _autoStopUpHandler(MouseEvent event) {
+   // stop the drag
+   // only call if we are currently dragging and enabled
+   if((_dragStartPending || _dragging) &amp;&amp; enabled) {
+     _logger.fine("stopping drag for auto stop");
+     stopDrag(event);
+   }
+ }
+
+ /// Manually end the drag
+ void stopDrag([MouseEvent event]) {
+   _logger.fine("stopping drag");
+
+   // signal that we are no longer dragging
+   _dragging = false;
+
+   // TODO if elements are changed during a drag, they won't be removed either
+
+   // remove callbacks
+   // TODO this can just be paused
+   _cancel("mouseMove", document);
+   for(Element e in _overTargets) {
+     _cancel("mouseOver", e);
+   }
+   for(Element e in _outTargets) {
+     _cancel("mouseOut", e);
+   }
+
+   // send end event if we weren't just pending
+   if(!_dragStartPending) {
+     _dragEndStreamController.add(new DragEvent._(this, currentTarget, event));
+   }
+
+   // clear current target
+   currentTarget = null;
+
+   // if we are on a delayed disable, do the disable
+   if(_delayedDisable) {
+     _delayedDisable = false;
+     enabled = false;
+   }
+
+   // clear pending flag if it was set
+   _dragStartPending = false;
+ }
+}
+</pre>
+</div>
+<div>
+<h3>Constructors</h3>
+<div class="method"><h4 id="">
+<button class="show-code">Code</button>
+new <strong>DragHandler</strong>(target) <a class="anchor-link" href="#"
+              title="Permalink to DragHandler.DragHandler">#</a></h4>
+<div class="doc">
+<p>Construct a handler with an Element or List&lt;Element></p>
+<pre class="source">
+DragHandler(target) {
+
+ // store a reference to the autostop up handler so we can add and remove it
+ _mouseUp = _autoStopUpHandler;
+ _mouseDown = _mouseDownHandler;
+ _mouseOver = _mouseOverHandler;
+ _mouseOut = _mouseOutHandler;
+ _mouseMove = _mouseMoveHandler;
+
+ // add initial element(s)
+ // non-null check helps dart2js
+ if(target != null) {
+   if(target is Element) addTarget(target);
+   else if(target is List&lt;Element&gt;) addTargets(target);
+ }
+
+ // set autostop on by default
+ autoStop = true;
+}
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Properties</h3>
+<div class="field"><h4 id="autoStop">
+<button class="show-code">Code</button>
+<a href="http://api.dartlang.org/dart_core/bool.html">bool</a>         <strong>autoStop</strong> <a class="anchor-link"
+            href="#autoStop"
+            title="Permalink to DragHandler.autoStop">#</a>
+        </h4>
+        <div class="doc">
+<p>True if we should automatically stop drags on mouse up</p>
+<pre class="source">
+bool get autoStop =&gt; _autoStop;
+</pre>
+<pre class="source">
+set autoStop(bool a) {
+ if(_autoStop != a) {
+   _logger.finer("changing autoStop to $a");
+   _autoStop = a;
+   if(a) {
+     // register up handler or resume existing
+     if(_mouseUpSubscription == null) {
+       _logger.finest("adding mouse up event to document");
+       _mouseUpSubscription = document.onMouseUp.listen(_mouseUp);
+     } else {
+       _logger.finest("resuming mouse up event on document");
+       _mouseUpSubscription.resume();
+     }
+   } else {
+     // pause up handler
+     _logger.finest("pausing mouse up event on document");
+     _mouseUpSubscription.pause();
+   }
+ }
+}
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="currentTarget">
+<button class="show-code">Code</button>
+<a href="http://api.dartlang.org/dart_html/Element.html">Element</a>         <strong>currentTarget</strong> <a class="anchor-link"
+            href="#currentTarget"
+            title="Permalink to DragHandler.currentTarget">#</a>
+        </h4>
+        <div class="doc">
+<p>The element that the current drag started on</p>
+<pre class="source">
+Element currentTarget
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="dragConditions">
+<button class="show-code">Code</button>
+<a href="../drag_handler/AllowDragStart.html">AllowDragStart</a>         <strong>dragConditions</strong> <a class="anchor-link"
+            href="#dragConditions"
+            title="Permalink to DragHandler.dragConditions">#</a>
+        </h4>
+        <div class="doc">
+<p>The function to call to determine if the drag should be allowed to start on mouse down</p>
+<pre class="source">
+AllowDragStart dragConditions
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="enabled">
+<button class="show-code">Code</button>
+<a href="http://api.dartlang.org/dart_core/bool.html">bool</a>         <strong>enabled</strong> <a class="anchor-link"
+            href="#enabled"
+            title="Permalink to DragHandler.enabled">#</a>
+        </h4>
+        <div class="doc">
+<p>True iff the handler is active</p>
+<pre class="source">
+bool get enabled =&gt; _enabled;
+</pre>
+<pre class="source">
+set enabled(bool e) {
+ _logger.fine("setting enabled to $e");
+ // if we are currently dragging, delay a disable until it ends
+ if(_dragging &amp;&amp; _enabled &amp;&amp; !e) {
+   _delayedDisable = true;
+   return;
+ }
+ // if we are enabled during a delayed disable, disable the delayed disable
+ if(_delayedDisable &amp;&amp; e) {
+   _delayedDisable = false;
+ }
+
+ // if we aren't changing state, don't do anything
+ if(_enabled != e) {
+
+   // update flag
+   _enabled = e;
+
+   // add or remove handlers
+   if(enabled) {
+     // add mouse down handlers to the targets
+     for(Element t in _targets) {
+       _listen("mouseDown", t);
+     }
+   } else {
+     // remove mouse down handlers from the targets
+     for(Element t in _targets) {
+       _cancel("mouseDown", t);
+     }
+   }
+ }
+}
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="onDrag">
+<button class="show-code">Code</button>
+final <a href="http://api.dartlang.org/dart_async/Stream.html">Stream</a>&lt;<a href="../drag_handler/DragEvent.html">DragEvent</a>&gt;         <strong>onDrag</strong> <a class="anchor-link"
+            href="#onDrag"
+            title="Permalink to DragHandler.onDrag">#</a>
+        </h4>
+        <div class="doc">
+<p>Exposed drag handler event streams</p>
+<pre class="source">
+Stream&lt;DragEvent&gt; get onDrag =&gt; _dragStreamController.stream;
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="onDragEnd">
+<button class="show-code">Code</button>
+final <a href="http://api.dartlang.org/dart_async/Stream.html">Stream</a>&lt;<a href="../drag_handler/DragEvent.html">DragEvent</a>&gt;         <strong>onDragEnd</strong> <a class="anchor-link"
+            href="#onDragEnd"
+            title="Permalink to DragHandler.onDragEnd">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+Stream&lt;DragEvent&gt; get onDragEnd =&gt; _dragEndStreamController.stream;
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="onDragOut">
+<button class="show-code">Code</button>
+final <a href="http://api.dartlang.org/dart_async/Stream.html">Stream</a>&lt;<a href="../drag_handler/DragEvent.html">DragEvent</a>&gt;         <strong>onDragOut</strong> <a class="anchor-link"
+            href="#onDragOut"
+            title="Permalink to DragHandler.onDragOut">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+Stream&lt;DragEvent&gt; get onDragOut =&gt; _dragOutStreamController.stream;
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="onDragOver">
+<button class="show-code">Code</button>
+final <a href="http://api.dartlang.org/dart_async/Stream.html">Stream</a>&lt;<a href="../drag_handler/DragEvent.html">DragEvent</a>&gt;         <strong>onDragOver</strong> <a class="anchor-link"
+            href="#onDragOver"
+            title="Permalink to DragHandler.onDragOver">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+Stream&lt;DragEvent&gt; get onDragOver =&gt; _dragOverStreamController.stream;
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="onDragStart">
+<button class="show-code">Code</button>
+final <a href="http://api.dartlang.org/dart_async/Stream.html">Stream</a>&lt;<a href="../drag_handler/DragEvent.html">DragEvent</a>&gt;         <strong>onDragStart</strong> <a class="anchor-link"
+            href="#onDragStart"
+            title="Permalink to DragHandler.onDragStart">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+Stream&lt;DragEvent&gt; get onDragStart =&gt; _dragStartStreamController.stream;
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method"><h4 id="addTarget">
+<button class="show-code">Code</button>
+void <strong>addTarget</strong>(<a href="http://api.dartlang.org/dart_html/Element.html">Element</a> element, {<a href="http://api.dartlang.org/dart_core/bool.html">bool</a> drag: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> over: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> out: true}) <a class="anchor-link" href="#addTarget"
+              title="Permalink to DragHandler.addTarget">#</a></h4>
+<div class="doc">
+<p>Add a target to the set</p>
+<pre class="source">
+void addTarget(Element element, {bool drag: true, bool over: true, bool out: true}) {
+ if(drag &amp;&amp; !_targets.contains(element)) {
+   _targets.add(element);
+   if(enabled) {
+     _logger.finer("adding mouse down to ${element.hashCode}");
+     _listen("mouseDown", element);
+   }
+ }
+ if(over &amp;&amp; !_overTargets.contains(element)) {
+   _overTargets.add(element);
+   if(enabled &amp;&amp; (_dragging || _dragStartPending)) {
+     _logger.finer("adding mouse over to ${element.hashCode}");
+     _listen("mouseOver", element, true);
+   }
+ }
+ if(out &amp;&amp; !_outTargets.contains(element)) {
+   _outTargets.add(element);
+   if(enabled &amp;&amp; (_dragging || _dragStartPending)) {
+     _logger.finer("adding mouse out to ${element.hashCode}");
+     _listen("mouseOut", element, true);
+   }
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="addTargets">
+<button class="show-code">Code</button>
+void <strong>addTargets</strong>(<a href="http://api.dartlang.org/dart_core/Iterable.html">Iterable</a>&lt;<a href="http://api.dartlang.org/dart_html/Element.html">Element</a>&gt; elements, {<a href="http://api.dartlang.org/dart_core/bool.html">bool</a> drag: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> over: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> out: true}) <a class="anchor-link" href="#addTargets"
+              title="Permalink to DragHandler.addTargets">#</a></h4>
+<div class="doc">
+<p>Add targets to the set</p>
+<pre class="source">
+void addTargets(Iterable&lt;Element&gt; elements, {bool drag: true, bool over: true, bool out:true}) {
+ _logger.fine("adding ${elements.length} elements, drag: $drag, over: $over, out: $out");
+ for(Element element in elements) {
+   addTarget(element, drag: drag, over: over, out: out);
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="removeAllTargets">
+<button class="show-code">Code</button>
+void <strong>removeAllTargets</strong>({<a href="http://api.dartlang.org/dart_core/bool.html">bool</a> drag: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> over: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> out: true}) <a class="anchor-link" href="#removeAllTargets"
+              title="Permalink to DragHandler.removeAllTargets">#</a></h4>
+<div class="doc">
+<p>Remove all targets</p>
+<pre class="source">
+void removeAllTargets({bool drag: true, bool over: true, bool out: true}) {
+ _logger.fine("removing all elements");
+ if(drag) removeTargets(new List.from(_targets));
+ if(out) removeTargets(new List.from(_outTargets));
+ if(over) removeTargets(new List.from(_overTargets));
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="removeTarget">
+<button class="show-code">Code</button>
+void <strong>removeTarget</strong>(<a href="http://api.dartlang.org/dart_html/Element.html">Element</a> element, {<a href="http://api.dartlang.org/dart_core/bool.html">bool</a> drag: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> over: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> out: true}) <a class="anchor-link" href="#removeTarget"
+              title="Permalink to DragHandler.removeTarget">#</a></h4>
+<div class="doc">
+<p>Remove a target from the set</p>
+<pre class="source">
+void removeTarget(Element element, {bool drag: true, bool over: true, bool out: true}) {
+ if(drag &amp;&amp; _targets.contains(element)) {
+   // remove down handler
+   _cancel("mouseDown", element);
+   _targets.remove(element);
+   _logger.finer("removing ${element.hashCode} and cancelling mouse down");
+ }
+ if(over &amp;&amp; _overTargets.contains(element)) {
+   // TOD if have subscribers?
+   _cancel("mouseOver", element);
+   _overTargets.remove(element);
+   _logger.finer("removing ${element.hashCode} and cancelling mouse over");
+ }
+ if(out &amp;&amp; _outTargets.contains(element)) {
+   _cancel("mouseOut", element);
+   _outTargets.remove(element);
+   _logger.finer("removing ${element.hashCode} and cancelling mouse out");
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="removeTargets">
+<button class="show-code">Code</button>
+void <strong>removeTargets</strong>(<a href="http://api.dartlang.org/dart_core/List.html">List</a>&lt;<a href="http://api.dartlang.org/dart_html/Element.html">Element</a>&gt; elements, {<a href="http://api.dartlang.org/dart_core/bool.html">bool</a> drag: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> over: true, <a href="http://api.dartlang.org/dart_core/bool.html">bool</a> out: true}) <a class="anchor-link" href="#removeTargets"
+              title="Permalink to DragHandler.removeTargets">#</a></h4>
+<div class="doc">
+<p>Remove targets from the set</p>
+<pre class="source">
+void removeTargets(List&lt;Element&gt; elements, {bool drag: true, bool over: true, bool out: true}) {
+ _logger.fine("removing ${elements.length} elements");
+ for(Element element in elements) {
+   removeTarget(element, drag: drag, over: over, out: out);
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="stopDrag">
+<button class="show-code">Code</button>
+void <strong>stopDrag</strong>([<a href="http://api.dartlang.org/dart_html/MouseEvent.html">MouseEvent</a> event]) <a class="anchor-link" href="#stopDrag"
+              title="Permalink to DragHandler.stopDrag">#</a></h4>
+<div class="doc">
+<p>Manually end the drag</p>
+<pre class="source">
+void stopDrag([MouseEvent event]) {
+ _logger.fine("stopping drag");
+
+ // signal that we are no longer dragging
+ _dragging = false;
+
+ // TODO if elements are changed during a drag, they won't be removed either
+
+ // remove callbacks
+ // TODO this can just be paused
+ _cancel("mouseMove", document);
+ for(Element e in _overTargets) {
+   _cancel("mouseOver", e);
+ }
+ for(Element e in _outTargets) {
+   _cancel("mouseOut", e);
+ }
+
+ // send end event if we weren't just pending
+ if(!_dragStartPending) {
+   _dragEndStreamController.add(new DragEvent._(this, currentTarget, event));
+ }
+
+ // clear current target
+ currentTarget = null;
+
+ // if we are on a delayed disable, do the disable
+ if(_delayedDisable) {
+   _delayedDisable = false;
+   enabled = false;
+ }
+
+ // clear pending flag if it was set
+ _dragStartPending = false;
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2013-10-30 16:27:20.082</div>
+        </div>
+        <script async src="../client-static.js"></script>
+        </body></html>
+        

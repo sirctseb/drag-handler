@@ -1,0 +1,143 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>DragOverEvent class / drag_handler Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="drag_handler" data-type="DragOverEvent">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../drag_handler.html">drag_handler</a> &rsaquo; <a href="../drag_handler/DragOverEvent.html">DragOverEvent</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+<h2><div class="icon-library"></div><a href="../drag_handler.html">drag_handler</a></h2><ul class="icon">
+<li><a href="../drag_handler/AllowDragStart.html"><div class="icon-interface"></div>AllowDragStart</a></li>
+<li><a href="../drag_handler/DragEvent.html"><div class="icon-class"></div>DragEvent</a></li>
+<li><a href="../drag_handler/DragHandler.html"><div class="icon-class"></div>DragHandler</a></li>
+<li><a href="../drag_handler/DragMoveEvent.html"><div class="icon-class"></div>DragMoveEvent</a></li>
+<li><a href="../drag_handler/DragOutEvent.html"><div class="icon-class"></div>DragOutEvent</a></li>
+<li><div class="icon-class"></div><strong>DragOverEvent</strong></li>
+</ul>
+<h2><div class="icon-library"></div><a href="../logging.html">logging</a></h2><h2><div class="icon-library"></div><a href="../meta.html">meta</a></h2><h2><div class="icon-library"></div><a href="../metadata.html">metadata</a></h2><h2><div class="icon-library"></div><a href="../unmodifiable_collection.html">unmodifiable_collection</a></h2></div>
+<div class="content">
+        <h2><strong>DragOverEvent</strong>
+          class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<p>The event class that is sent with drag over stream event updates</p>
+<pre class="source">
+class DragOverEvent extends DragEvent {
+
+ /// Whether this event corresponds to the last drag event that was received
+ bool get lastEvent =&gt; this == _lastOver;
+
+ // create a drag over event
+ DragOverEvent._(DragHandler handler, Element element, MouseEvent event, Element over)
+     : super._(handler, element, event, over) {
+   // TODO this assumes we only create these when real over events are received
+   // TODO if one is created for some other reason then _lastOver will not be correct
+   _lastOver = this;
+ }
+
+ // The last drag over event created
+ static DragOverEvent _lastOver;
+}
+</pre>
+</div>
+<h3>Extends</h3>
+<p>
+<span class="type-box"><span class="icon-class"></span><a href="../drag_handler/DragEvent.html">DragEvent</a></span>&nbsp;&gt;&nbsp;<span class="type-box"><span class="icon-class"></span><strong>DragOverEvent</strong></span></p>
+<div>
+<h3>Properties</h3>
+<div class="field inherited"><h4 id="dragHandler">
+<button class="show-code">Code</button>
+<a href="../drag_handler/DragHandler.html">DragHandler</a>         <strong>dragHandler</strong> <a class="anchor-link"
+            href="#dragHandler"
+            title="Permalink to DragOverEvent.dragHandler">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../drag_handler/DragEvent.html">DragEvent</a> </div><div class="doc">
+<p>The <a class="crossref" href="../drag_handler/DragHandler.html">DragHandler</a> sending the event</p>
+<pre class="source">
+DragHandler dragHandler
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="element">
+<button class="show-code">Code</button>
+<a href="http://api.dartlang.org/dart_html/Element.html">Element</a>         <strong>element</strong> <a class="anchor-link"
+            href="#element"
+            title="Permalink to DragOverEvent.element">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../drag_handler/DragEvent.html">DragEvent</a> </div><div class="doc">
+<p>The <a class="crossref" href="../dart_html/Element.html">Element</a> being dragged</p>
+<pre class="source">
+Element element
+</pre>
+</div>
+</div>
+<div class="field"><h4 id="lastEvent">
+<button class="show-code">Code</button>
+final <a href="http://api.dartlang.org/dart_core/bool.html">bool</a>         <strong>lastEvent</strong> <a class="anchor-link"
+            href="#lastEvent"
+            title="Permalink to DragOverEvent.lastEvent">#</a>
+        </h4>
+        <div class="doc">
+<p>Whether this event corresponds to the last drag event that was received</p>
+<pre class="source">
+bool get lastEvent =&gt; this == _lastOver;
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="mouseEvent">
+<button class="show-code">Code</button>
+<a href="http://api.dartlang.org/dart_html/MouseEvent.html">MouseEvent</a>         <strong>mouseEvent</strong> <a class="anchor-link"
+            href="#mouseEvent"
+            title="Permalink to DragOverEvent.mouseEvent">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../drag_handler/DragEvent.html">DragEvent</a> </div><div class="doc">
+<p>The <a class="crossref" href="../dart_html/MouseEvent.html">MouseEvent</a> that instigated the drag handler event</p>
+<pre class="source">
+MouseEvent mouseEvent
+</pre>
+</div>
+</div>
+<div class="field inherited"><h4 id="other">
+<button class="show-code">Code</button>
+<a href="http://api.dartlang.org/dart_html/Element.html">Element</a>         <strong>other</strong> <a class="anchor-link"
+            href="#other"
+            title="Permalink to DragOverEvent.other">#</a>
+        </h4>
+        <div class="inherited-from">inherited from <a href="../drag_handler/DragEvent.html">DragEvent</a> </div><div class="doc">
+<p>For out events, the <a class="crossref" href="../dart_html/Element.html">Element</a> being dragged out of.
+For over events, the <a class="crossref" href="../dart_html/Element.html">Element</a> being dragged over</p>
+<pre class="source">
+Element other
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2013-10-30 16:27:20.133</div>
+        </div>
+        <script async src="../client-static.js"></script>
+        </body></html>
+        
