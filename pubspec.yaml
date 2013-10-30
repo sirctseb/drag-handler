@@ -3,5 +3,6 @@ version: 0.1.1-dev
 author: Christopher Best <bestchris@gmail.com>
 description: Encapsulate mouse dragging operations on DOM elements
 homepage: https://github.com/sirctseb/drag-handler
+documentation: http://sirctseb.github.io/drag-handler
 dependencies:
   logging: '>=0.8.7 <1.0.0'
