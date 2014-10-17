@@ -340,9 +340,6 @@ class DragHandler {
 
     _logger.fine("got mouse down event for ${event.currentTarget.hashCode}");
 
-    // to prevent selection during drag
-    event.preventDefault();
-
     // store the current target
     // TODO should we get the element explicitly from our own list?
     // TODO or is event.currentTarget safely the same?
