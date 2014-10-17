@@ -1,10 +1,10 @@
 name: drag_handler
-version: 0.1.2-dev
+version: 0.2.0-dev
 author: Christopher Best <bestchris@gmail.com>
 description: Encapsulate mouse dragging operations on DOM elements
 homepage: https://github.com/sirctseb/drag-handler
-documentation: http://sirctseb.github.io/drag-handler
 environment:
   sdk: '>=0.8.10+6 <2.0.0'
+documentation: http://sirctseb.github.io/drag-handler
 dependencies:
   logging: '>=0.9.0 <1.0.0'
