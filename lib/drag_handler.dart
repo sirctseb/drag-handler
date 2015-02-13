@@ -228,6 +228,11 @@ class DragHandler {
     }
   }
 
+  /// Prevent default action on mouse down. To prevent draggable parents
+  /// from begin dragged and text from being selected
+  // TODO there may be a better way to accomplish this
+  bool preventDefault = false;
+
   // true iff a drag is occurring
   bool _dragging = false;
 
@@ -339,6 +344,10 @@ class DragHandler {
     if(dragConditions != null && !dragConditions(this, event.currentTarget, event)) return;
 
     _logger.fine("got mouse down event for ${event.currentTarget.hashCode}");
+
+    if(preventDefault) {
+      event.preventDefault();
+    }
 
     // store the current target
     // TODO should we get the element explicitly from our own list?
