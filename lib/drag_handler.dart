@@ -379,7 +379,7 @@ class DragHandler {
   void _mouseOverHandler(MouseEvent event) {
     // only respond to this event when the element being left is
     // not a child of the element the event was attached to
-    if((event.currentTarget as Element).contains(event.fromElement)) return;
+    if((event.currentTarget as Element).contains(event.relatedTarget)) return;
 
     _logger.fine("got mouse over event for ${event.currentTarget.hashCode}");
 
@@ -392,7 +392,7 @@ class DragHandler {
   void _mouseOutHandler(MouseEvent event) {
     // only respond to this event when the element we're going to is
     // not a child of the element the event was attached to
-    if((event.currentTarget as Element).contains(event.toElement)) return;
+    if((event.currentTarget as Element).contains(event.relatedTarget)) return;
 
     _logger.fine("got mouse out event for ${event.currentTarget.hashCode}");
 
