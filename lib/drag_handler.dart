@@ -235,6 +235,7 @@ class DragHandler {
 
   // true iff a drag is occurring
   bool _dragging = false;
+  bool get dragging => _dragging;
 
   // true iff we got a mouse down and are waiting for the first move
   // to actually start the drag
