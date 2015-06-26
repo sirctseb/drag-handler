@@ -320,7 +320,7 @@ class DragHandler {
   Element currentTarget;
 
   /// Construct a handler with an Element or List<Element>
-  DragHandler(target) {
+  DragHandler([target]) {
 
     // store a reference to the autostop up handler so we can add and remove it
     _mouseUp = _autoStopUpHandler;
