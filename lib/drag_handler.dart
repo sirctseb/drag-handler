@@ -98,11 +98,11 @@ class DragHandler {
   static final _logger = new Logger("drag-handler");
 
   // stream controllers
-  StreamController<DragEvent> _dragStreamController = new StreamController<DragEvent>();
-  StreamController<DragEvent> _dragStartStreamController = new StreamController<DragEvent>();
-  StreamController<DragEvent> _dragEndStreamController = new StreamController<DragEvent>();
-  StreamController<DragEvent> _dragOutStreamController = new StreamController<DragEvent>();
-  StreamController<DragEvent> _dragOverStreamController = new StreamController<DragEvent>();
+  StreamController<DragEvent> _dragStreamController = new StreamController<DragEvent>.broadcast();
+  StreamController<DragEvent> _dragStartStreamController = new StreamController<DragEvent>.broadcast();
+  StreamController<DragEvent> _dragEndStreamController = new StreamController<DragEvent>.broadcast();
+  StreamController<DragEvent> _dragOutStreamController = new StreamController<DragEvent>.broadcast();
+  StreamController<DragEvent> _dragOverStreamController = new StreamController<DragEvent>.broadcast();
 
   /// Exposed drag handler event streams
   Stream<DragEvent> get onDrag => _dragStreamController.stream;
